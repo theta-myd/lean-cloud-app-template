@@ -16,6 +16,7 @@
 				isActive: true,
 				items: [
 					{ title: 'Overview', url: '/' },
+					{ title: 'TODO Sample', url: '/todos' },
 					{ title: 'Health Check', url: '/api/health' }
 				]
 			},
