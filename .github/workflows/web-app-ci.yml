@@ -39,6 +39,9 @@ jobs:
       - name: Typecheck & Svelte Check
         run: bun run --bun check
 
+      - name: Unit Tests (Vitest)
+        run: bun run test:unit
+
       - name: Production Build (adapter-bun)
         run: bun run --bun build
 
