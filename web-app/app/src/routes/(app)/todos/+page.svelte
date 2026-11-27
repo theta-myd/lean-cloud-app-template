@@ -70,6 +70,44 @@
 	<title>TODO Sample — Lean Cloud App</title>
 </svelte:head>
 
+{#snippet stableSubmitLabel(
+	pending: boolean,
+	idleText: string,
+	pendingText: string,
+	gapClass: string,
+	iconSizeClass: string,
+	IdleIcon: typeof PlusIcon
+)}
+	<span class="inline-grid place-items-center">
+		<span
+			class={[
+				'col-start-1 row-start-1 inline-flex items-center justify-center',
+				gapClass,
+				pending && 'invisible'
+			]}
+			aria-hidden={pending ? 'true' : undefined}
+		>
+			<IdleIcon class={iconSizeClass} />
+			<span>{idleText}</span>
+		</span>
+		<span
+			class={[
+				'col-start-1 row-start-1 inline-flex items-center justify-center',
+				gapClass,
+				!pending && 'invisible'
+			]}
+			aria-hidden={!pending ? 'true' : undefined}
+		>
+			{#if pending}
+				<Spinner class={iconSizeClass} />
+			{:else}
+				<span class={['shrink-0', iconSizeClass]} aria-hidden="true"></span>
+			{/if}
+			<span>{pendingText}</span>
+		</span>
+	</span>
+{/snippet}
+
 <div class="flex flex-col gap-4">
 	<Card.Root>
 		<Card.Header>
@@ -128,13 +166,14 @@
 					required
 				/>
 				<Button type="submit" disabled={data.firestore.mode === 'unconfigured' || creating}>
-					{#if creating}
-						<Spinner data-icon="inline-start" />
-						Adding...
-					{:else}
-						<PlusIcon data-icon="inline-start" />
-						Add
-					{/if}
+					{@render stableSubmitLabel(
+						creating,
+						'Add',
+						'Adding...',
+						'gap-1.5',
+						'size-4',
+						PlusIcon
+					)}
 				</Button>
 			</form>
 		</Card.Content>
@@ -175,13 +214,14 @@
 										required
 									/>
 									<Button type="submit" size="sm" disabled={rowPending === 'update'}>
-										{#if rowPending === 'update'}
-											<Spinner data-icon="inline-start" />
-											Saving...
-										{:else}
-											<CheckIcon data-icon="inline-start" />
-											Save
-										{/if}
+										{@render stableSubmitLabel(
+											rowPending === 'update',
+											'Save',
+											'Saving...',
+											'gap-1',
+											'size-3.5',
+											CheckIcon
+										)}
 									</Button>
 									<Button
 										type="button"
