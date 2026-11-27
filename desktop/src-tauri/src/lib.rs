@@ -69,7 +69,7 @@ pub fn run() {
             };
 
             let nav_handle = app.handle().clone();
-            WebviewWindowBuilder::new(app, "main", webview_url)
+            let main_window = WebviewWindowBuilder::new(app, "main", webview_url)
                 .title("Lean Cloud App")
                 .inner_size(1280.0, 820.0)
                 .min_inner_size(900.0, 600.0)
@@ -83,6 +83,9 @@ pub fn run() {
                     true
                 })
                 .build()?;
+
+            let _ = main_window.show();
+            let _ = main_window.set_focus();
 
             #[cfg(any(target_os = "linux", all(debug_assertions, windows)))]
             {
