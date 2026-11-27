@@ -4,7 +4,7 @@
 
 **Svelte 5 + SvelteKit 3** と **Tauri** をベースにした、**月額 $10 未満**・**Scale-to-Zero（`min-instance = 0`）** 志向の Cloud Run Web & デスクトップアプリテンプレートです。
 
-> **ステータス:** Light 構成のアーキテクチャ設計・OKF v0.3 ADR・GCP Terraform IaC（`web-app/infra/gcp/`）まで整備済み。次のステップはアプリケーション雛形（`web-app/app/`、`desktop/`）の構築です。
+> **ステータス:** Light 構成のアーキテクチャ設計・OKF v0.3 ADR・GCP Terraform IaC（`web-app/infra/gcp/`）・`web-app/app/`（`Svelte 5 + SvelteKit 3 + shadcn-svelte + mode-watcher + better-auth`）まで整備済み。次のステップは CI/CD & E2E（[Issue #4](https://github.com/theta-myd/lean-cloud-app-template/issues/4), [#5](https://github.com/theta-myd/lean-cloud-app-template/issues/5)）、Firestore CRUD サンプル（[#6](https://github.com/theta-myd/lean-cloud-app-template/issues/6)）、`desktop/` Tauri ラッパー（[#7](https://github.com/theta-myd/lean-cloud-app-template/issues/7)）です。
 
 ---
 
@@ -23,7 +23,7 @@
 ![Light Architecture](../architecture/light-architecture.drawio.svg)
 
 - **Compute (`web-app/app`):** Cloud Run v2 単一コンテナ（`asia-northeast1`、`min_instance_count = 0`、1 vCPU / 512 MiB、`*.run.app`）上で Svelte 5 + SvelteKit 3（`adapter-bun`）＋ **distroless** イメージを稼働
-- **UI:** `shadcn-svelte`（Home: `sidebar-07` / Login: `login-03`）＋ `web-app/app/` 配下に `shadcn-svelte` スキルを配置予定
+- **UI:** `shadcn-svelte`（Home: `sidebar-07` / Login: `login-03`）＋ `mode-watcher`（`light` / `dark` / `system`）＋ `web-app/app/.agents/skills/` 配下に `shadcn-svelte` と公式 Svelte スキルを配置済み
 - **認証:** `better-auth`（**Stateless Cookie モード**）＋ **Google OAuth 2.0 のみ**（`openid`, `email`, `profile`、$0）。環境変数ベースの Allowlist 認可と、E2E テスト専用のパスワードログイン切替（本番は `ENABLE_E2E_PASSWORD_AUTH=false` 固定）に対応
 - **データストア:** **Cloud Firestore（Standard Edition, Native Mode）** を永年無料枠内で利用。Cloud Run ランタイム SA 経由のサーバーサイド専用アクセスとし、ローカル開発では `compose.yaml` で公式 Firestore Emulator を使用
 - **Desktop (`desktop`):** `web-app/app` をラップする Tauri アプリ（Google OAuth は OS 標準ブラウザへ委譲し Deep Link で復帰）

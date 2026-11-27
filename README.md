@@ -4,7 +4,7 @@
 
 A **<$10/month**, **scale-to-zero (`min-instance = 0`)** Cloud Run web & desktop application template built around **Svelte 5 + SvelteKit 3** and **Tauri**.
 
-> **Status:** Light architecture design, OKF v0.3 ADR, and GCP Terraform IaC (`web-app/infra/gcp/`) are ready. Next up: application scaffolding (`web-app/app/`, `desktop/`).
+> **Status:** Light architecture design, OKF v0.3 ADR, GCP Terraform IaC (`web-app/infra/gcp/`), and `web-app/app/` (`Svelte 5 + SvelteKit 3 + shadcn-svelte + mode-watcher + better-auth`) are ready. Next up: CI/CD & E2E ([Issue #4](https://github.com/theta-myd/lean-cloud-app-template/issues/4), [#5](https://github.com/theta-myd/lean-cloud-app-template/issues/5)), Firestore CRUD sample ([#6](https://github.com/theta-myd/lean-cloud-app-template/issues/6)), and `desktop/` Tauri wrapper ([#7](https://github.com/theta-myd/lean-cloud-app-template/issues/7)).
 
 ---
 
@@ -23,7 +23,7 @@ A **<$10/month**, **scale-to-zero (`min-instance = 0`)** Cloud Run web & desktop
 ![Light Architecture](./docs/architecture/light-architecture.drawio.svg)
 
 - **Compute (`web-app/app`):** Cloud Run v2 single container (`asia-northeast1`, `min_instance_count = 0`, 1 vCPU / 512 MiB, `*.run.app`) running Svelte 5 + SvelteKit 3 (`adapter-bun`) on a hardened **distroless** image
-- **UI:** `shadcn-svelte` (Home: `sidebar-07`, Login: `login-03`) + `shadcn-svelte` agent skill under `web-app/app/`
+- **UI:** `shadcn-svelte` (Home: `sidebar-07`, Login: `login-03`) with `mode-watcher` (`light` / `dark` / `system`) + bundled `shadcn-svelte` and official Svelte skills under `web-app/app/.agents/skills/`
 - **Authentication:** `better-auth` in **Stateless Cookie** mode + **Google OAuth 2.0 only** (`openid`, `email`, `profile`, `$0`), with optional env-based user/domain allowlist and an E2E-only password login toggle (`ENABLE_E2E_PASSWORD_AUTH=false` in production)
 - **Datastore:** **Cloud Firestore (Standard Edition, Native Mode)** within the Always Free daily tier, accessed server-side only via the Cloud Run runtime service account (local dev uses the official Firestore Emulator via `compose.yaml`)
 - **Desktop (`desktop`):** Tauri wrapper around `web-app/app` (delegates Google OAuth to the OS browser and returns via Deep Link)

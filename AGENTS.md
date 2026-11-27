@@ -61,3 +61,13 @@ This file defines shared rules for all AI coding agents and contributors working
 - **Keyless CI/CD:** Authenticate GitHub Actions to Google Cloud via **Workload Identity Federation (OIDC)** only.
 - **Production Auth Safety:** Keep `ENABLE_E2E_PASSWORD_AUTH="false"` in production Cloud Run (`web-app/infra/gcp/cloud_run.tf`), and default `AUTH_ACCESS_MODE="allowlist"`.
 - **Public Issues-only workflow:** Keep `.github/workflows/secret-scan.yml` (Gitleaks) and `.github/workflows/terraform-validate.yml` green. External PRs are not accepted (`.github/CONTRIBUTING.md`).
+
+---
+
+## 6. Task Workflow (Issue -> Worktree -> Draft PR -> Merge)
+
+- **One task per GitHub Issue:** Create a dedicated GitHub Issue before starting implementation, listing explicit **Owned Paths** so parallel work stays conflict-free.
+- **Claim before starting:** Assign the Issue and add the `in-progress` label before branching (`gh issue edit <N> --add-label in-progress --add-assignee @me`).
+- **Sibling Git worktree:** Create the task branch (`<type>/issue-<N>-<slug>`) in a sibling directory outside the repository root (`../lean-cloud-app-template-wt/issue-<N>`) so secret scanners and repo tools never scan nested worktrees. Multiple Issues whose Owned Paths do not overlap may run in parallel.
+- **Draft PR while working:** Always open in-progress Pull Requests as **Draft** (`gh pr create --draft`) to prevent accidental merges before work and CI checks are complete. Include `Closes #<N>` (and `Generated with Gemini (Antigravity)` per `GEMINI.md` when co-developed).
+- **Ready, Merge, and Cleanup:** Once implementation is finished and all CI checks pass, mark the PR ready (`gh pr ready`). After review, squash-merge into `main`, delete the branch, remove the worktree (`git worktree remove`), and clear `in-progress` if still attached.
