@@ -12,7 +12,7 @@
       "devDependencies": {
         "@fontsource-variable/geist": "^5.3.0",
         "@internationalized/date": "^3.12.0",
-        "@lucide/svelte": "^1.81.0",
+        "@lucide/svelte": "^1.82.0",
         "@sveltejs/adapter-bun": "^1.0.3",
         "@sveltejs/kit": "^3.2.0",
         "@sveltejs/vite-plugin-svelte": "^7.3.1",
@@ -79,7 +79,7 @@
 
     "@js-sdsl/ordered-map": ["@js-sdsl/ordered-map@4.4.2", "", {}, "sha512-iUKgm52T8HOE/makSxjqoWhe95ZJA1/G1sYsGev2JDKUSS14KAgg1LHb+Ba+IPow0xflbnSkOsZcO08C7w1gYw=="],
 
-    "@lucide/svelte": ["@lucide/svelte@1.81.0", "", { "peerDependencies": { "svelte": "^5" } }, "sha512-q8rljlyKNiZP6oYt4gQkUQQ1K3QsKHS/uCv7TjaRgxW8cY+S9i0+VW32DiH5RTDQgnlZBaZf2qklL1Dj/0J/qw=="],
+    "@lucide/svelte": ["@lucide/svelte@1.82.0", "", { "peerDependencies": { "svelte": "^5" } }, "sha512-IpYZspXMi5EsdxQyad9hSg90FZOCQyQhfIyHUWFZJei8OY0uS82rnBDpIo76765lEaMa3rtjAtv/+If8tlpXaQ=="],
 
     "@noble/ciphers": ["@noble/ciphers@2.4.0", "", {}, "sha512-AnjFn0Jv92laAkvMrghlFZq4qQCIN/4DxFV/eooqtC2YTjB7kBeLMS2T9KJX4Dn+ZVXLOwK0lSgqDtx9gvxtiw=="],
 

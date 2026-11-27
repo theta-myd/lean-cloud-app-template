@@ -1,9 +1,10 @@
 <script lang="ts">
-	import { page } from '$app/state';
+	import { navigating, page } from '$app/state';
 	import AppSidebar from '#lib/components/app-sidebar.svelte';
 	import * as Breadcrumb from '#lib/components/ui/breadcrumb/index.js';
 	import { Separator } from '#lib/components/ui/separator/index.js';
 	import * as Sidebar from '#lib/components/ui/sidebar/index.js';
+	import { Skeleton } from '#lib/components/ui/skeleton/index.js';
 	import type { LayoutProps } from './$types';
 
 	let { data, children }: LayoutProps = $props();
@@ -14,10 +15,11 @@
 		'/licenses': 'Licenses'
 	};
 
+	const activePathname = $derived(navigating.to?.url.pathname ?? page.url.pathname);
+
 	const currentTitle = $derived.by(() => {
-		const pathname = page.url.pathname;
-		if (pathname in pageTitles) return pageTitles[pathname];
-		const segment = pathname.split('/').filter(Boolean).pop();
+		if (activePathname in pageTitles) return pageTitles[activePathname];
+		const segment = activePathname.split('/').filter(Boolean).pop();
 		return segment ? segment.charAt(0).toUpperCase() + segment.slice(1) : 'Overview';
 	});
 </script>
@@ -44,7 +46,25 @@
 		</header>
 
 		<div class="flex flex-1 flex-col gap-4 p-4 pt-0">
-			{@render children()}
+			{#await navigating.complete}
+				<div
+					class="flex flex-1 flex-col gap-4"
+					role="status"
+					aria-busy="true"
+					aria-label="Loading page"
+				>
+					<div class="grid gap-4 md:grid-cols-3">
+						<Skeleton class="h-36 w-full rounded-xl" />
+						<Skeleton class="h-36 w-full rounded-xl" />
+						<Skeleton class="h-36 w-full rounded-xl" />
+					</div>
+					<Skeleton class="min-h-64 flex-1 rounded-xl" />
+				</div>
+			{:then}
+				{@render children()}
+			{:catch}
+				{@render children()}
+			{/await}
 		</div>
 	</Sidebar.Inset>
 </Sidebar.Provider>

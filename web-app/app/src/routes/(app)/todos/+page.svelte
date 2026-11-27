@@ -1,10 +1,11 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { enhance, type SubmitFunction } from '$app/forms';
 	import * as Alert from '#lib/components/ui/alert/index.js';
 	import { Badge } from '#lib/components/ui/badge/index.js';
 	import { Button } from '#lib/components/ui/button/index.js';
 	import * as Card from '#lib/components/ui/card/index.js';
 	import { Input } from '#lib/components/ui/input/index.js';
+	import { Spinner } from '#lib/components/ui/spinner/index.js';
 	import CheckIcon from '@lucide/svelte/icons/check';
 	import CircleAlertIcon from '@lucide/svelte/icons/circle-alert';
 	import PencilIcon from '@lucide/svelte/icons/pencil';
@@ -16,8 +17,10 @@
 	let { data, form }: PageProps = $props();
 
 	let newTitle = $state('');
+	let creating = $state(false);
 	let editingId = $state<string | null>(null);
 	let editingTitle = $state('');
+	let pendingActions = $state<Record<string, 'toggle' | 'update' | 'delete'>>({});
 
 	function startEditing(id: string, title: string) {
 		editingId = id;
@@ -27,6 +30,39 @@
 	function cancelEditing() {
 		editingId = null;
 		editingTitle = '';
+	}
+
+	const handleCreate: SubmitFunction = () => {
+		creating = true;
+		return async ({ result, update }) => {
+			try {
+				await update();
+				if (result.type === 'success') {
+					newTitle = '';
+				}
+			} finally {
+				creating = false;
+			}
+		};
+	};
+
+	function handleRowAction(
+		id: string,
+		kind: 'toggle' | 'update' | 'delete'
+	): SubmitFunction {
+		return () => {
+			pendingActions[id] = kind;
+			return async ({ result, update }) => {
+				try {
+					await update();
+					if (kind === 'update' && result.type === 'success') {
+						cancelEditing();
+					}
+				} finally {
+					delete pendingActions[id];
+				}
+			};
+		};
 	}
 </script>
 
@@ -62,8 +98,8 @@
 					<Alert.Title>Firestore not configured</Alert.Title>
 					<Alert.Description>
 						Set <code>FIRESTORE_EMULATOR_HOST=localhost:8080</code> (with
-						<code>wslc compose up -d</code>) or <code>GOOGLE_CLOUD_PROJECT</code> in <code>.env</code>
-						to persist TODO items.
+						<code>wslc</code>) or <code>GOOGLE_CLOUD_PROJECT</code> in <code>.env</code> to persist
+						TODO items.
 					</Alert.Description>
 				</Alert.Root>
 			{:else if data.connectionError}
@@ -82,30 +118,23 @@
 				</Alert.Root>
 			{/if}
 
-			<form
-				method="POST"
-				action="?/create"
-				class="flex gap-2"
-				use:enhance={() => {
-					return async ({ result, update }) => {
-						await update();
-						if (result.type === 'success') {
-							newTitle = '';
-						}
-					};
-				}}
-			>
+			<form method="POST" action="?/create" class="flex gap-2" use:enhance={handleCreate}>
 				<Input
 					name="title"
 					placeholder="Add a task to verify Firestore CRUD..."
 					bind:value={newTitle}
 					maxlength={200}
-					disabled={data.firestore.mode === 'unconfigured'}
+					disabled={data.firestore.mode === 'unconfigured' || creating}
 					required
 				/>
-				<Button type="submit" disabled={data.firestore.mode === 'unconfigured'}>
-					<PlusIcon data-icon="inline-start" />
-					Add
+				<Button type="submit" disabled={data.firestore.mode === 'unconfigured' || creating}>
+					{#if creating}
+						<Spinner data-icon="inline-start" />
+						Adding...
+					{:else}
+						<PlusIcon data-icon="inline-start" />
+						Add
+					{/if}
 				</Button>
 			</form>
 		</Card.Content>
@@ -128,44 +157,58 @@
 			{:else}
 				<ul class="divide-y divide-border">
 					{#each data.todos as todo (todo.id)}
+						{@const rowPending = pendingActions[todo.id]}
 						<li class="flex flex-wrap items-center justify-between gap-2 py-3 first:pt-0 last:pb-0">
 							{#if editingId === todo.id}
 								<form
 									method="POST"
 									action="?/update"
 									class="flex flex-1 items-center gap-2"
-									use:enhance={() => {
-										return async ({ result, update }) => {
-											await update();
-											if (result.type === 'success') {
-												cancelEditing();
-											}
-										};
-									}}
+									use:enhance={handleRowAction(todo.id, 'update')}
 								>
 									<input type="hidden" name="id" value={todo.id} />
-									<Input name="title" bind:value={editingTitle} maxlength={200} required />
-									<Button type="submit" size="sm">
-										<CheckIcon data-icon="inline-start" />
-										Save
+									<Input
+										name="title"
+										bind:value={editingTitle}
+										maxlength={200}
+										disabled={rowPending === 'update'}
+										required
+									/>
+									<Button type="submit" size="sm" disabled={rowPending === 'update'}>
+										{#if rowPending === 'update'}
+											<Spinner data-icon="inline-start" />
+											Saving...
+										{:else}
+											<CheckIcon data-icon="inline-start" />
+											Save
+										{/if}
 									</Button>
-									<Button type="button" variant="ghost" size="sm" onclick={cancelEditing}>
+									<Button
+										type="button"
+										variant="ghost"
+										size="sm"
+										disabled={rowPending === 'update'}
+										onclick={cancelEditing}
+									>
 										<XIcon data-icon="inline-start" />
 										Cancel
 									</Button>
 								</form>
 							{:else}
 								<div class="flex min-w-0 flex-1 items-center gap-3">
-									<form method="POST" action="?/toggle" use:enhance>
+									<form method="POST" action="?/toggle" use:enhance={handleRowAction(todo.id, 'toggle')}>
 										<input type="hidden" name="id" value={todo.id} />
 										<input type="hidden" name="completed" value={String(!todo.completed)} />
 										<Button
 											type="submit"
 											variant={todo.completed ? 'secondary' : 'outline'}
 											size="icon-sm"
+											disabled={Boolean(rowPending)}
 											aria-label={todo.completed ? 'Mark as incomplete' : 'Mark as complete'}
 										>
-											{#if todo.completed}
+											{#if rowPending === 'toggle'}
+												<Spinner />
+											{:else if todo.completed}
 												<CheckIcon />
 											{/if}
 										</Button>
@@ -190,20 +233,26 @@
 										variant="ghost"
 										size="icon-sm"
 										aria-label="Edit task"
+										disabled={Boolean(rowPending)}
 										onclick={() => startEditing(todo.id, todo.title)}
 									>
 										<PencilIcon />
 									</Button>
-									<form method="POST" action="?/delete" use:enhance>
+									<form method="POST" action="?/delete" use:enhance={handleRowAction(todo.id, 'delete')}>
 										<input type="hidden" name="id" value={todo.id} />
 										<Button
 											type="submit"
 											variant="ghost"
 											size="icon-sm"
 											aria-label="Delete task"
+											disabled={Boolean(rowPending)}
 											class="text-destructive hover:text-destructive"
 										>
-											<Trash2Icon />
+											{#if rowPending === 'delete'}
+												<Spinner />
+											{:else}
+												<Trash2Icon />
+											{/if}
 										</Button>
 									</form>
 								</div>
