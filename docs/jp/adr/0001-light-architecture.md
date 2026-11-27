@@ -98,7 +98,7 @@ Playwright 等による E2E テストでは Google 本番 OAuth フローの自�
 ### 5.3 ローカル開発（Firestore Emulator）
 ローカル開発時は Google Cloud 公式の Firestore Emulator コンテナを使用し、実 GCP 課金・ネットワーク依存なしで開発する。
 
-- **ルート `compose.yaml`:** 公式イメージ `gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators` を用い、`gcloud emulators firestore start --host-port=0.0.0.0:8080` を起動する（Windows では `wslc compose up -d` 想定）。
+- **ルート `compose.yaml` / コンテナ起動コマンド:** 公式イメージ `gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators` を用い、`gcloud emulators firestore start --host-port=0.0.0.0:8080` を起動する（Docker では `docker compose up -d`、Windows の `wslc` には `compose` サブコマンドがないため `wslc run -d --rm --name firestore-emulator -p 8080:8080 gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators gcloud emulators firestore start --host-port=0.0.0.0:8080` を使用）。
 - **SDK 接続:** アプリ側に `FIRESTORE_EMULATOR_HOST=localhost:8080` を設定するだけで、`@google-cloud/firestore` が自動的にエミュレータへ接続するため、本番とローカルでアプリコードを分岐させる必要がない。
 
 ---

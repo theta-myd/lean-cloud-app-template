@@ -47,7 +47,7 @@ This file defines shared rules for all AI coding agents and contributors working
 ## 4. Tooling & Development Conventions
 
 - **JavaScript / TypeScript:** Prefer `bun` and `bunx` (`adapter-bun` for SvelteKit).
-- **Local development (Firestore):** Use root `compose.yaml` (`gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators`, `FIRESTORE_EMULATOR_HOST=localhost:8080`; on Windows run via `wslc compose up -d`).
+- **Local development (Firestore):** Use `docker compose up -d` with root `compose.yaml` (`gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators`, `FIRESTORE_EMULATOR_HOST=localhost:8080`). On Windows with `wslc` (which has no `compose` subcommand), run `wslc run -d --rm --name firestore-emulator -p 8080:8080 gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators gcloud emulators firestore start --host-port=0.0.0.0:8080`.
 - **Terraform (`web-app/infra/gcp/`):** Keep HCL formatted per `terraform fmt`, pass `terraform validate`, enforce Artifact Registry cleanup policies, and keep the two-step Secret Manager bootstrap (`enable_secret_env_refs = false` -> add versions -> `true`).
 - **Rust (Tauri / future `web-app/api/`):** Follow `cargo`, `clippy`, and `rustfmt`.
 - **UI Components & Svelte Skills:** Use `shadcn-svelte` blocks (`sidebar-07`, `login-03`), `mode-watcher` for Light/Dark/System themes, and follow the local agent skills placed under `web-app/app/.agents/skills/` (`shadcn-svelte`, `svelte-code-writer`, `svelte-core-bestpractices`).
