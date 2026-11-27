@@ -5,7 +5,6 @@ import type { PageServerLoad } from './$types';
 export const load: PageServerLoad = ({ locals }) => {
 	const config = getServerConfig();
 	return {
-		user: locals.user!,
 		authMode: locals.authMode,
 		accessMode: config.authAccessMode,
 		firestore: getFirestoreStatus()

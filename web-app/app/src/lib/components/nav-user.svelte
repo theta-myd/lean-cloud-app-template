@@ -6,7 +6,7 @@
 	import * as Sidebar from '#lib/components/ui/sidebar/index.js';
 	import { useSidebar } from '#lib/components/ui/sidebar/index.js';
 	import BadgeCheckIcon from '@lucide/svelte/icons/badge-check';
-	import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down';
+	import EllipsisVerticalIcon from '@lucide/svelte/icons/ellipsis-vertical';
 	import LogOutIcon from '@lucide/svelte/icons/log-out';
 	import MoonIcon from '@lucide/svelte/icons/moon';
 	import SunIcon from '@lucide/svelte/icons/sun';
@@ -57,7 +57,7 @@
 							<span class="truncate font-medium">{user.name}</span>
 							<span class="truncate text-xs">{user.email}</span>
 						</div>
-						<ChevronsUpDownIcon class="ms-auto size-4" />
+						<EllipsisVerticalIcon class="ms-auto size-4" />
 					</Sidebar.MenuButton>
 				{/snippet}
 			</DropdownMenu.Trigger>

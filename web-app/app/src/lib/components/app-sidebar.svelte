@@ -8,13 +8,6 @@
 	import ShieldCheckIcon from '@lucide/svelte/icons/shield-check';
 
 	const navData = {
-		teams: [
-			{
-				name: 'Lean Cloud App',
-				logo: GalleryVerticalEndIcon,
-				plan: 'Light (<$10/mo)'
-			}
-		],
 		navMain: [
 			{
 				title: 'Workspace',
@@ -56,7 +49,6 @@
 	import NavMain from './nav-main.svelte';
 	import NavProjects from './nav-projects.svelte';
 	import NavUser from './nav-user.svelte';
-	import TeamSwitcher from './team-switcher.svelte';
 	import type { ComponentProps } from 'svelte';
 
 	interface Props extends ComponentProps<typeof Sidebar.Root> {
@@ -76,8 +68,19 @@
 </script>
 
 <Sidebar.Root bind:ref {collapsible} {...restProps}>
-	<Sidebar.Header>
-		<TeamSwitcher teams={navData.teams} />
+	<Sidebar.Header class="h-12 justify-center">
+		<Sidebar.Menu>
+			<Sidebar.MenuItem>
+				<Sidebar.MenuButton class="data-[slot=sidebar-menu-button]:p-1.5!">
+					{#snippet child({ props })}
+						<a href="/" {...props}>
+							<GalleryVerticalEndIcon class="size-5!" />
+							<span class="text-base font-semibold">Lean Cloud App</span>
+						</a>
+					{/snippet}
+				</Sidebar.MenuButton>
+			</Sidebar.MenuItem>
+		</Sidebar.Menu>
 	</Sidebar.Header>
 	<Sidebar.Content>
 		<NavMain items={navData.navMain} />
