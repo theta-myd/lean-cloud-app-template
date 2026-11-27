@@ -21,12 +21,12 @@
 	const sidebar = useSidebar();
 </script>
 
-<Sidebar.Group class="group-data-[collapsible=icon]:hidden">
+<Sidebar.Group>
 	<Sidebar.GroupLabel>Projects</Sidebar.GroupLabel>
 	<Sidebar.Menu>
 		{#each projects as item (item.name)}
 			<Sidebar.MenuItem>
-				<Sidebar.MenuButton>
+				<Sidebar.MenuButton tooltipContent={item.name}>
 					{#snippet child({ props })}
 						<a href={item.url} {...props}>
 							<item.icon />
@@ -66,7 +66,7 @@
 			</Sidebar.MenuItem>
 		{/each}
 		<Sidebar.MenuItem>
-			<Sidebar.MenuButton class="text-sidebar-foreground/70">
+			<Sidebar.MenuButton tooltipContent="More" class="text-sidebar-foreground/70">
 				<EllipsisIcon class="text-sidebar-foreground/70" />
 				<span>More</span>
 			</Sidebar.MenuButton>

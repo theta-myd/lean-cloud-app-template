@@ -13,6 +13,7 @@
 		items?: {
 			title: string;
 			url: string;
+			icon?: Component<{ class?: string }>;
 		}[];
 	}
 
@@ -56,10 +57,14 @@
 									<Sidebar.MenuSubItem>
 										<Sidebar.MenuSubButton
 											isActive={isRouteActive(subItem.url, page.url.pathname)}
+											tooltipContent={subItem.title}
 											class="data-active:font-medium"
 										>
 											{#snippet child({ props })}
 												<a href={subItem.url} {...props}>
+													{#if subItem.icon}
+														<subItem.icon />
+													{/if}
 													<span>{subItem.title}</span>
 												</a>
 											{/snippet}

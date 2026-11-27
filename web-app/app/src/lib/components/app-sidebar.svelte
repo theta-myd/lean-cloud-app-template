@@ -1,11 +1,17 @@
 <script lang="ts" module>
+	import ActivityIcon from '@lucide/svelte/icons/activity';
 	import BookOpenIcon from '@lucide/svelte/icons/book-open';
 	import CloudIcon from '@lucide/svelte/icons/cloud';
 	import DatabaseIcon from '@lucide/svelte/icons/database';
 	import GalleryVerticalEndIcon from '@lucide/svelte/icons/gallery-vertical-end';
+	import HomeIcon from '@lucide/svelte/icons/home';
+	import KeyRoundIcon from '@lucide/svelte/icons/key-round';
 	import LayoutDashboardIcon from '@lucide/svelte/icons/layout-dashboard';
+	import ListTodoIcon from '@lucide/svelte/icons/list-todo';
+	import ServerIcon from '@lucide/svelte/icons/server';
 	import Settings2Icon from '@lucide/svelte/icons/settings-2';
 	import ShieldCheckIcon from '@lucide/svelte/icons/shield-check';
+	import UserCheckIcon from '@lucide/svelte/icons/user-check';
 
 	const navData = {
 		navMain: [
@@ -15,9 +21,9 @@
 				icon: LayoutDashboardIcon,
 				isActive: true,
 				items: [
-					{ title: 'Overview', url: '/' },
-					{ title: 'TODO Sample', url: '/todos' },
-					{ title: 'Health Check', url: '/api/health' }
+					{ title: 'Overview', url: '/', icon: HomeIcon },
+					{ title: 'TODO Sample', url: '/todos', icon: ListTodoIcon },
+					{ title: 'Health Check', url: '/api/health', icon: ActivityIcon }
 				]
 			},
 			{
@@ -25,16 +31,16 @@
 				url: '#architecture',
 				icon: BookOpenIcon,
 				items: [
-					{ title: 'Cloud Run v2', url: '#compute' },
-					{ title: 'Firestore Standard', url: '#datastore' },
-					{ title: 'Better Auth', url: '#auth' }
+					{ title: 'Cloud Run v2', url: '#compute', icon: ServerIcon },
+					{ title: 'Firestore Standard', url: '#datastore', icon: DatabaseIcon },
+					{ title: 'Better Auth', url: '#auth', icon: KeyRoundIcon }
 				]
 			},
 			{
 				title: 'Settings',
 				url: '#settings',
 				icon: Settings2Icon,
-				items: [{ title: 'Access Control', url: '#auth' }]
+				items: [{ title: 'Access Control', url: '#auth', icon: UserCheckIcon }]
 			}
 		],
 		projects: [
