@@ -1,0 +1,16 @@
+title = "lean-cloud-app-template gitleaks config"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Allow placeholder values inside example config files"
+paths = [
+  '''(^|/)\.env\.example$''',
+  '''(^|/)terraform\.tfvars\.example$''',
+]
+regexes = [
+  '''CHANGE_ME''',
+  '''your-gcp-project-id''',
+  '''your-google-client-id''',
+]

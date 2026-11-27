@@ -1,0 +1,19 @@
+name: Feature Request / Architecture Proposal
+description: Suggest an improvement, template option, or architecture refinement
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Describe the feature or architecture improvement you'd like to propose.
+    validations:
+      required: true
+  - type: textarea
+    id: rationale
+    attributes:
+      label: Motivation & Cost Impact
+      description: Why is this useful, and does it stay aligned with the <$10/month scale-to-zero goal?
+    validations:
+      required: false

@@ -1,0 +1,43 @@
+# Secrets & Environment Variables
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*credentials*.json
+*-sa-key.json
+*service-account*.json
+
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# Node / Bun / SvelteKit
+node_modules/
+.svelte-kit/
+build/
+dist/
+.output/
+
+# Rust / Tauri
+target/
+desktop/src-tauri/gen/
+
+# OS / Editors
+.DS_Store
+Thumbs.db
+*.log

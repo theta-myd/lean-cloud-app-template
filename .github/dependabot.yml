@@ -1,0 +1,22 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # Uncomment once respective project manifests are added:
+  # - package-ecosystem: "npm"
+  #   directory: "/web-app/app"
+  #   schedule:
+  #     interval: "weekly"
+  #
+  # - package-ecosystem: "terraform"
+  #   directory: "/web-app/infra/gcp"
+  #   schedule:
+  #     interval: "weekly"
+  #
+  # - package-ecosystem: "cargo"
+  #   directory: "/desktop/src-tauri"
+  #   schedule:
+  #     interval: "weekly"

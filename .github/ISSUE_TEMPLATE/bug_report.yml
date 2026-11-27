@@ -1,0 +1,35 @@
+name: Bug Report
+description: Report a bug or reproducible issue in the template
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting an issue! Please make sure **not** to paste any real secrets, API keys, or private GCP project IDs.
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened vs. what you expected?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: How can this be reproduced?
+      placeholder: |
+        1. Create a repository from template
+        2. Run '...'
+        3. See error '...'
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Bun / Terraform / Rust / Tauri version, Cloud Run region, etc.
+      placeholder: "Windows 11 / Bun 1.4.x / Terraform 1.x"
+    validations:
+      required: false
