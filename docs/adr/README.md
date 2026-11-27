@@ -1,48 +1,49 @@
 # Architecture Decision Records (OKF v0.3)
 
-このディレクトリは、[Open Knowledge Format (OKF) v0.3](https://github.com/open-knowledge-format/open-knowledge-format) をベースに **ADR（Architecture Decision Record）用にカスタマイズしたナレッジバンドル** です。
+This directory is an **Open Knowledge Format (OKF) v0.3** knowledge bundle ([specification](https://github.com/open-knowledge-format/open-knowledge-format)) customized for Architecture Decision Records (ADRs).
 
-> **Note:** この `README.md` には `type` フロントマターを置かないことで、OKF v0.3 準拠コンシューマーから「非コンセプトの人間向けガイド」として安全にスキップされる設計にしています（OKF SPEC §3.2）。
-
----
-
-## 1. ディレクトリ規約
-
-- **`index.md`**: バンドルルート宣言（`okf_version: "0.3"`）および ADR 一覧
-- **`log.md`**: 変更履歴（フロントマターなし・`## YYYY-MM-DD` 降順）
-- **`NNNN-<slug>.md`**: 個別の ADR コンセプト文書（4 桁連番 + ケバブケース、例: `0001-light-architecture.md`）
+> **Note:** This `README.md` intentionally omits a `type` YAML frontmatter field so OKF v0.3 consumers treat it as non-concept human guidance and skip it cleanly (OKF SPEC §3.2).
 
 ---
 
-## 2. OKF v0.3 + ADR カスタム拡張スキーマ
+## 1. Directory Conventions
 
-### OKF v0.3 標準フィールド
-- `type`: `"ADR"`（必須）
-- `title`: ADR タイトル（例: `"ADR-0001: ..."`）
-- `description`: エージェント・人間向けの 1 文サマリー
-- `tags`: 横断分類タグ（例: `[architecture, gcp, cloud-run]`）
-- `status`: OKF ライフサイクル状態（**`draft` | `stable` | `deprecated`**）
-- `superseded_by`: 置き換え先パス（`status: deprecated` の場合のみ、例: `/0002-new-architecture.md`）
-- `generated`: 最終意味変更の記録 `{ by: "<agent>/<ver>" | "human:<id>", at: "<RFC3339>" }`
-- `verified`: レビュー記録の配列 `[{ by: "human:<id>", at: "<RFC3339>" }]`
-  - **Trust Tier ルール（OKF §5.3）:** `verified[].at >= generated.at` かつ `human:` プレフィックスがある場合のみ `human-reviewed` と判定されます。AI エージェントが内容を書き換えた場合は `generated.at` を更新するため、人間の再確認まで自動的に降格します。
-- `stale_after`: 見直し推奨期限（RFC 3339 絶対時刻、例: `"2027-05-27T00:00:00Z"`）
-- `sources`: 根拠ソース一覧（`id`, `resource`, `title`, `author`, `last_modified` 等）。本文からは `[^id]` 脚注で参照します。
-
-### ADR 用拡張フィールド（OKF §4.1 `x-` 規約準拠）
-- `x-adr-id`: `"ADR-NNNN"`（例: `"ADR-0001"`）
-- `x-adr-status`: ADR 固有ステータス（`proposed` | `accepted` | `rejected` | `superseded`）
-- `x-adr-deciders`: 意思決定者リスト（例: `["human:theta"]`）
+- **`index.md`**: Bundle root declaration (`okf_version: "0.3"`) and ADR listing.
+- **`log.md`**: Chronological update log (no frontmatter, newest-first `## YYYY-MM-DD` headings).
+- **`NNNN-<slug>.md`**: Individual ADR concept documents in canonical English (e.g., `0001-light-architecture.md`).
+- **Japanese mirrors:** Maintained separately under [`../jp/adr/`](../jp/adr/) so `docs/adr/` stays free of duplicate concepts.
 
 ---
 
-## 3. 新規 ADR テンプレート
+## 2. OKF v0.3 + ADR Extension Schema
+
+### OKF v0.3 Standard Fields
+- `type`: `"ADR"` (required)
+- `title`: ADR title (e.g., `"ADR-0001: ..."`)
+- `description`: One-sentence summary for humans and agents
+- `tags`: Cross-cutting category tags (e.g., `[architecture, gcp, cloud-run]`)
+- `status`: OKF lifecycle state (**`draft` | `stable` | `deprecated`**)
+- `superseded_by`: Replacement concept path (only when `status: deprecated`, e.g., `/0002-new-architecture.md`)
+- `generated`: Authoring record `{ by: "<agent>/<ver>" | "human:<id>", at: "<RFC3339>" }`
+- `verified`: Verification event list `[{ by: "human:<id>", at: "<RFC3339>" }]`
+  - **Trust tier rule (OKF §5.3):** `human-reviewed` requires `verified[].at >= generated.at` with a `human:` actor prefix. When an agent updates substantive content, update `generated.at` without forging human verification.
+- `stale_after`: Optional RFC 3339 review deadline (e.g., `"2027-05-27T00:00:00Z"`)
+- `sources`: Provenance references (`id`, `resource`, `title`, `author`, etc.), cited in the body via `[^id]` footnotes.
+
+### ADR Extension Fields (`x-` convention per OKF §4.1)
+- `x-adr-id`: `"ADR-NNNN"` (e.g., `"ADR-0001"`)
+- `x-adr-status`: ADR-specific lifecycle (`proposed` | `accepted` | `rejected` | `superseded`)
+- `x-adr-deciders`: List of decision makers (e.g., `["human:theta"]`)
+
+---
+
+## 3. New ADR Template
 
 ````markdown
 ---
 type: ADR
-title: "ADR-NNNN: タイトル"
-description: "この意思決定の 1 文サマリー。"
+title: "ADR-NNNN: Title"
+description: "One-sentence summary of the architectural decision."
 tags:
   - architecture
 status: draft
@@ -59,15 +60,17 @@ sources:
     title: Reference Title
 ---
 
-# ADR-NNNN: タイトル
+> Language: **English** | [日本語](../jp/adr/NNNN-slug.md)
 
-## 1. コンテキストと制約
+# ADR-NNNN: Title
+
+## 1. Context and Constraints
 ...
 
-## 2. 決定事項
+## 2. Decisions
 ...
 
-## 3. トレードオフ・コスト・セキュリティ影響
+## 3. Trade-offs, Cost, and Security Impact
 ...
 
 [^ref-1]: Reference Title

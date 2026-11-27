@@ -1,7 +1,7 @@
 ---
 type: ADR
-title: "ADR-0001: Light 構成アーキテクチャ設計（GCP / <$10/month / Scale-to-Zero）"
-description: "Google Cloud の Cloud Run v2（min_instance_count=0）、Svelte 5 + SvelteKit 3（adapter-bun + distroless）、Better Auth Stateless Cookie + Google OAuth、Cloud Firestore Standard、Tauri による <$10/month Light 構成を定義する。"
+title: "ADR-0001: Light Architecture Design (GCP / <$10/month / Scale-to-Zero)"
+description: "Defines the <$10/month Light architecture on Google Cloud using Cloud Run v2 (min_instance_count=0), Svelte 5 + SvelteKit 3 (adapter-bun + distroless), Better Auth Stateless Cookie + Google OAuth, Cloud Firestore Standard, and Tauri."
 tags:
   - architecture
   - gcp
@@ -18,10 +18,10 @@ x-adr-deciders:
   - "human:theta"
 generated:
   by: "antigravity/gemini-4"
-  at: "2026-11-27T12:10:00+09:00"
+  at: "2026-11-27T13:15:00+09:00"
 verified:
   - by: "human:theta"
-    at: "2026-11-27T12:15:00+09:00"
+    at: "2026-11-27T13:15:00+09:00"
 stale_after: "2027-05-27T00:00:00Z"
 sources:
   - id: cloud-run-pricing
@@ -42,122 +42,124 @@ sources:
     author: "team:open-knowledge-format"
 ---
 
-# ADR-0001: Light 構成アーキテクチャ設計（GCP / <$10/month / Scale-to-Zero）
+> Language: **English** | [日本語](../jp/adr/0001-light-architecture.md)
 
-- **関連図:** [light-architecture.drawio.svg](../architecture/light-architecture.drawio.svg)（編集可能ソース: [light-architecture.drawio](../architecture/light-architecture.drawio)）
-- **実装先:** [web-app/infra/gcp/](../../web-app/infra/gcp/) / [compose.yaml](../../compose.yaml) / [web-app/app/.env.example](../../web-app/app/.env.example)
+# ADR-0001: Light Architecture Design (GCP / <$10/month / Scale-to-Zero)
 
----
-
-## 1. コンテキストと制約
-
-個人開発・スモールスタート向けの Web / Desktop アプリテンプレートとして、以下の制約を満たす初期アーキテクチャ（**Light 構成**）を定義する。
-
-1. **コスト上限:** 通常〜低トラフィック運用で **月額 $10 未満（アイドル時は $0 付近）** に収める。
-2. **Scale-to-Zero 徹底:** 常時稼働インスタンス（Cloud SQL、Cloud Load Balancing 等）を排除し、`min_instance_count = 0` で運用する。
-3. **モノレポ保守性:** 単一コンテナ構成で開始しつつ、将来の **Standard 構成**（Rust API + PostgreSQL + RLS）[^roadmap-standard-issue] へ拡張可能なディレクトリ構造を維持する。
-4. **Public テンプレート安全性:** 実シークレットやサービスアカウント鍵（JSON）をリポジトリ・CI ともに持たない。
+- **Diagram:** [light-architecture.drawio.svg](../architecture/light-architecture.drawio.svg) (editable source: [light-architecture.drawio](../architecture/light-architecture.drawio))
+- **Implementation:** [web-app/infra/gcp/](../../web-app/infra/gcp/) | [compose.yaml](../../compose.yaml) | [web-app/app/.env.example](../../web-app/app/.env.example)
 
 ---
 
-## 2. 決定事項
+## 1. Context and Constraints
 
-| レイヤー | 採用技術 / サービス | 選定理由 |
+We need an initial architecture (**Light** variant) for a small-scale / indie web and desktop application template that satisfies the following constraints:
+
+1. **Cost ceiling:** Keep monthly Google Cloud spend **under $10/month** at low/normal traffic (near **$0/month** when idle).
+2. **Strict scale-to-zero:** Eliminate always-on fixed-cost services (such as Cloud SQL and Cloud Load Balancing) and run with `min_instance_count = 0`.
+3. **Monorepo maintainability:** Start with a single-container setup while keeping the repository structure ready for a future **Standard** multi-service upgrade (Rust API + PostgreSQL + RLS).[^roadmap-standard-issue]
+4. **Public template safety:** Never store real secrets or JSON service account keys in Git or CI/CD.
+
+---
+
+## 2. Decisions
+
+| Layer | Technology / Service | Rationale |
 | :--- | :--- | :--- |
-| **Compute** | **Cloud Run v2**（単一コンテナ、`asia-northeast1` Tier 1、`min_instance_count = 0`、1 vCPU / 512 MiB、リクエストベース課金） | Scale-to-Zero 対応。無料枠（月 200 万リクエスト / 18 万 vCPU 秒 / 36 万 GiB 秒）が広い。[^cloud-run-pricing] |
-| **Web App / BFF** | **Svelte 5 + SvelteKit 3**（`adapter-bun`）+ **distroless** | 単一コンテナで SSR・BFF・認証を完結。distroless 非 root 実行でイメージサイズと攻撃面を最小化。 |
-| **UI** | **shadcn-svelte**（Home: `sidebar-07` / Login: `login-03`） | 折りたたみアイコン付きダッシュボードとログイン画面を標準ブロックベースで構築。 |
-| **認証** | **Better Auth（Stateless Cookie モード）** + **Google OAuth 2.0 のみ**（`openid`, `email`, `profile`） | Better Auth（MIT OSS）＋ Google OAuth 基本スコープはいずれも無料。Stateless 暗号化 HttpOnly Cookie により、セッション検証ごとの DB 読み取りをゼロ化。 |
-| **Desktop** | **Tauri**（`web-app/app` ラッパー） | Google は組込 WebView 内の OAuth をブロック（`disallowed_useragent`）するため、OS 標準ブラウザで認証しカスタム URL スキーム（Deep Link）でセッションを戻す設計とする。 |
-| **データストア** | **Cloud Firestore（Standard Edition, Native Mode）**（`asia-northeast1`） | 永年無料枠（1 GiB / 日次 50,000 Read / 20,000 Write / 20,000 Delete）内で運用可能。Cloud Run ランタイム SA（ADC）経由でサーバーサイド専用アクセスとし、クライアントへ直接公開しない。[^firestore-pricing] |
-| **Ingress** | **Cloud Run 標準 HTTPS URL（`*.run.app`）** | Cloud Load Balancing は固定費（月額約 $18〜）が発生し予算を超過するため不採用。独自ドメインや CDN が必要になった場合は、任意オプションとして **Firebase Hosting**（無料枠あり）を前段に追加する。 |
-| **Registry** | **Artifact Registry** + Cleanup Policy | distroless イメージを保管し、Cleanup Policy で最新 2〜3 世代のみ保持して無料枠（0.5 GiB）内に収める。 |
-| **シークレット** | **Secret Manager** | `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` 等を格納（無料枠: 6 アクティブバージョン / 月 10,000 アクセス）。 |
-| **CI/CD** | **GitHub Actions + Workload Identity Federation（OIDC）** | 鍵ファイルを発行せず短命トークンでデプロイ。 |
-| **監視 / 安全装置** | **Cloud Logging / Monitoring** + **Cloud Billing Budget** | ログ無料枠（50 GiB/月）を活用しつつ、`$5` / `$8` / `$10` の 3 段階で予算アラートを通知する。 |
+| **Compute** | **Cloud Run v2** (single container, `asia-northeast1` Tier 1, `min_instance_count = 0`, 1 vCPU / 512 MiB, request-based billing) | Scales to zero with a generous Always Free tier (2M requests, 180k vCPU-sec, 360k GiB-sec/month).[^cloud-run-pricing] |
+| **Web App / BFF** | **Svelte 5 + SvelteKit 3** (`adapter-bun`) + **distroless** | Serves SSR, BFF, and auth from one container; non-root distroless minimizes image size and attack surface. |
+| **UI** | **shadcn-svelte** (Home: `sidebar-07` / Login: `login-03`) | Standard block-based collapsible icon sidebar dashboard and login screen. |
+| **Authentication** | **Better Auth (Stateless Cookie mode)** + **Google OAuth 2.0 only** (`openid`, `email`, `profile`) | Better Auth (MIT OSS) and basic Google OAuth scopes are both free. Encrypted HttpOnly stateless cookies require zero DB reads per session check. |
+| **Desktop** | **Tauri** (`web-app/app` wrapper) | Google blocks OAuth inside embedded WebViews (`disallowed_useragent`), so desktop sign-in delegates to the OS default browser and returns via a custom URL scheme (Deep Link). |
+| **Datastore** | **Cloud Firestore (Standard Edition, Native Mode)** (`asia-northeast1`) | Covered by the Always Free daily tier (1 GiB, 50k reads, 20k writes, 20k deletes/day). Accessed server-side only via the Cloud Run runtime service account (ADC).[^firestore-pricing] |
+| **Ingress** | **Cloud Run default HTTPS URL (`*.run.app`)** | Cloud Load Balancing adds ~$18+/month in fixed hourly charges and exceeds the budget. Custom domains/CDN can optionally use **Firebase Hosting** (with a free tier) later. |
+| **Registry** | **Artifact Registry** + Cleanup Policy | Stores distroless images with automated cleanup keeping only the latest 2–3 versions inside the 0.5 GiB Always Free tier. |
+| **Secrets** | **Secret Manager** | Stores `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID`, and `GOOGLE_CLIENT_SECRET` (Always Free: 6 active versions, 10k accesses/month). |
+| **CI/CD** | **GitHub Actions + Workload Identity Federation (OIDC)** | Keyless deployment via short-lived OIDC tokens. |
+| **Observability & Guardrails** | **Cloud Logging / Monitoring** + **Cloud Billing Budget** | Uses the 50 GiB/month free logging tier plus staged budget alerts at `$5` / `$8` / `$10`. |
 
 ---
 
-## 3. 月額コスト試算と予算超過リスク
+## 3. Monthly Cost Estimate and Overrun Risks
 
-### 想定月額コスト
+### Estimated Monthly Cost
 
-| サービス | 無料枠（概要） | アイドル時 | 小規模運用時 |
+| Service | Always Free Tier Summary | Idle | Light Traffic |
 | :--- | :--- | :--- | :--- |
-| Cloud Run v2 | 200万 req / 18万 vCPU秒 / 36万 GiB秒（請求アカウント単位）[^cloud-run-pricing] | $0 | $0〜$2 |
-| Cloud Firestore (Standard) | 1 GiB / 日次 5万 R / 2万 W / 2万 D（1 DB/プロジェクト）[^firestore-pricing] | $0 | $0〜$2 |
-| Artifact Registry | 0.5 GiB（請求アカウント単位） | $0 | $0（Cleanup Policy 前提） |
-| Secret Manager | 6 バージョン / 1万アクセス | $0 | $0 |
-| Cloud Logging | 50 GiB / 月 | $0 | $0 |
-| **合計** | — | **$0 / 月** | **$0〜$5 / 月** |
+| Cloud Run v2 | 2M req / 180k vCPU-sec / 360k GiB-sec (per billing account)[^cloud-run-pricing] | $0 | $0–$2 |
+| Cloud Firestore (Standard) | 1 GiB / 50k R / 20k W / 20k D per day (1 DB/project)[^firestore-pricing] | $0 | $0–$2 |
+| Artifact Registry | 0.5 GiB (per billing account) | $0 | $0 (with Cleanup Policy) |
+| Secret Manager | 6 active versions / 10k accesses | $0 | $0 |
+| Cloud Logging | 50 GiB / month | $0 | $0 |
+| **Total** | — | **$0 / mo** | **$0–$5 / mo** |
 
-### 主な予算超過リスクと対策
-- **Artifact Registry の肥大化:** イメージが蓄積すると 0.5 GiB を超えて課金されるため、Terraform 側で Cleanup Policy（直近 3 世代保持 + untagged 7日 / tagged 30日削除）を必須化する。
-- **Cloud Run のアウトバウンド転送・コールドスタート多発:** 大容量静的アセットの配信が増えた場合は、前段に Firebase Hosting（CDN）または Cloud Storage を検討する。
-- **Firestore の無制限クエリ:** セッション確認を Stateless Cookie に逃がしているため通常読み取りは少ないが、一覧取得には必ずページネーション（`limit`）を実装する。
-
----
-
-## 4. セキュリティ設計とトレードオフ
-
-1. **Better Auth Stateless Cookie のトレードオフ**
-   - **利点:** セッション検証で Firestore Read を消費しない（コストゼロ・低レイテンシ）。
-   - **制約:** サーバー側 DB にセッションレコードを持たないため、特定端末の即時強制ログアウトや管理者による一括セッション失効は行えない。
-   - **緩和策:** セッション Cookie の有効期限（`expiresIn`）を短め〜適正値（例: 7 日）に設定し、`BETTER_AUTH_SECRET` は Secret Manager で管理する（ローテーションで全セッション失効が可能）。将来、即時失効やマルチデバイス管理・Email/Password が必要になった場合は DB 永続化へ移行する。
-2. **Firestore アクセス境界**
-   - Firestore Security Rules はデフォルト全拒否とし、SvelteKit BFF（`server.ts`）のみが Cloud Run ランタイムサービスアカウント（最小権限 IAM ロール）でアクセスする。
-3. **IAM 最小権限分離**
-   - **GitHub Actions Deploy 用 SA（WIF/OIDC）:** Artifact Registry への Push と Cloud Run デプロイ権限のみ。
-   - **Cloud Run Runtime 用 SA:** Firestore 読み書きと指定シークレットの `secretAccessor` 権限のみ。
+### Key Overrun Risks & Mitigations
+- **Artifact Registry growth:** Unbounded images exceed 0.5 GiB. Terraform enforces cleanup policies (delete untagged >7d, tagged >30d, keep recent 3 versions).
+- **Cloud Run egress / heavy static assets:** Offload heavy static assets to Firebase Hosting (CDN) or Cloud Storage if egress grows.
+- **Unbounded Firestore queries:** Because session checks use stateless cookies, read volume stays low; enforce `limit` pagination on all list queries.
 
 ---
 
-## 5. 認可制御・E2E テスト認証・ローカル開発設計
+## 4. Security Design and Trade-offs
 
-### 5.1 特定ユーザー限定アクセス（Allowlist 認可）
-Google OAuth 2.0 のみを維持したまま、利用者を特定ユーザー／組織に限定するため、環境変数ベースの Allowlist 認可を標準搭載する。
-
-- **環境変数:**
-  - `AUTH_ACCESS_MODE`: `open`（全 Google アカウント許可）または `allowlist`（許可リスト一致のみ許可、テンプレート既定値）
-  - `ALLOWED_EMAILS`: カンマ区切りの許可メールアドレス一覧
-  - `ALLOWED_DOMAINS`: カンマ区切りの許可ドメイン一覧（例: Google Workspace ドメイン単位許可）
-- **実装ポイント:**
-  - Google OAuth コールバック時（Better Auth フック）および SvelteKit `hooks.server.ts` の両方で `email` と `emailVerified === true` を検証する。
-  - Allowlist を環境変数（または Secret Manager）で持つため **Firestore Read は 0 回** のまま維持できる。将来、管理画面から動的にユーザー招待・管理を行うアプリへ発展させる場合は、Firestore の `allowed_users` コレクション参照へ差し替える。
-  - 個人・限定グループ向け運用の場合は、Google Cloud Console 側の OAuth 同意画面を「テスト（最大 100 名のテストユーザー）」または「内部（Google Workspace 限定）」に設定する運用も第 1 防衛線として併用できる。
-
-### 5.2 E2E テスト用 Email / Password ログイン（環境変数切替）
-Playwright 等による E2E テストでは Google 本番 OAuth フローの自動化が困難なため、環境変数でオン／オフできるテスト用ログイン経路を用意する。
-
-- **環境変数:**
-  - `ENABLE_E2E_PASSWORD_AUTH=false`（本番 Cloud Run では必ず `false` 固定）
-  - `E2E_TEST_EMAIL` / `E2E_TEST_PASSWORD`（ローカル／CI E2E 実行時のみ設定）
-- **設計:**
-  - **UI（`login-03`）:** `ENABLE_E2E_PASSWORD_AUTH=true` の場合のみ Email / Password フォームを表示し、`false` では Google ログインボタンのみを表示する。
-  - **バックエンド（Better Auth）:** 本番（`false`）では完全 Stateless Cookie モードで動作させ、`true` のときだけ Bun 標準内蔵のインメモリ SQLite（`bun:sqlite` の `:memory:`）を Better Auth の `database` へ渡して `emailAndPassword` を有効化し、起動時にテストユーザーを 1 件シードする。追加パッケージや永続 DB なしで正規の Better Auth セッション Cookie を発行できる。
-
-### 5.3 ローカル開発（Firestore Emulator）
-ローカル開発時は Google Cloud 公式の Firestore Emulator コンテナを使用し、実 GCP 課金・ネットワーク依存なしで開発する。
-
-- **ルート `compose.yaml`:** 公式イメージ `gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators` を用い、`gcloud emulators firestore start --host-port=0.0.0.0:8080` を起動する（Windows では `wslc compose up -d` 想定）。
-- **SDK 接続:** アプリ側に `FIRESTORE_EMULATOR_HOST=localhost:8080` を設定するだけで、`@google-cloud/firestore` が自動的にエミュレータへ接続するため、本番とローカルでアプリコードを分岐させる必要がない。
+1. **Better Auth Stateless Cookie Trade-off**
+   - **Pros:** Zero Firestore reads and low latency on session validation.
+   - **Constraint:** Without a session table in a DB, individual device sessions cannot be immediately revoked server-side.
+   - **Mitigation:** Keep cookie TTL reasonable (e.g., 7 days) and store `BETTER_AUTH_SECRET` in Secret Manager (secret rotation invalidates all sessions). Move to DB-backed sessions if immediate per-device revocation or email/password production auth is needed later.
+2. **Firestore Access Boundary**
+   - Firestore Security Rules deny all direct client access; only the SvelteKit BFF (`server.ts`) accesses Firestore using the least-privilege Cloud Run runtime SA.
+3. **Least-Privilege IAM Separation**
+   - **GitHub Actions Deployer SA (WIF/OIDC):** Restricted to Artifact Registry writer (scoped to the repo), Cloud Run developer, and `iam.serviceAccountUser` on the runtime SA.
+   - **Cloud Run Runtime SA:** Restricted to `roles/datastore.user` and `roles/secretmanager.secretAccessor` on the specific app secrets.
 
 ---
 
-## 6. Terraform リソース構成（`web-app/infra/gcp/`）
+## 5. Access Control, E2E Test Auth, and Local Development
 
-[web-app/infra/gcp/](../../web-app/infra/gcp/) に以下のリソースを実装済みです。[^okf-spec-v03]
+### 5.1 Restricted User Access (Allowlist Authorization)
+To support private/invite-only apps while keeping Google OAuth 2.0 as the sole login provider, environment-based allowlist authorization is built in:
 
-- `versions.tf` / `providers.tf` — Terraform / `hashicorp/google` プロバイダ定義（Remote State 対応ガイド付き）
-- `variables.tf` / `terraform.tfvars.example` — `project_id`, `region`（`asia-northeast1`）, `service_name`, `budget_amount_usd`（`10`）, `github_repository`, `auth_access_mode` 等
-- `apis.tf` — 必要 API の有効化（`run.googleapis.com`, `firestore.googleapis.com`, `artifactregistry.googleapis.com`, `secretmanager.googleapis.com`, `iam.googleapis.com`, `iamcredentials.googleapis.com`, `cloudresourcemanager.googleapis.com`, 任意で `billingbudgets.googleapis.com`）
-- `iam.tf` — Cloud Run ランタイム SA、GitHub Actions 用 Workload Identity Pool / Provider + Deploy SA
-- `artifact_registry.tf` — Docker リポジトリ＋Cleanup Policy（untagged 7日 / tagged 30日削除 + 最新 `artifact_keep_count` 世代保持）
-- `secrets.tf` — Secret Manager シークレット枠作成（2 段階ブートストラップ、値は Git 管理外で登録）
-- `firestore.tf` — Firestore Standard（`FIRESTORE_NATIVE`）データベース
-- `cloud_run.tf` — Cloud Run v2 サービス（`min_instance_count = 0`, 1 vCPU / 512 MiB, 非 root distroless 前提, `ENABLE_E2E_PASSWORD_AUTH = "false"` 固定）
-- `budget.tf` — Cloud Billing Budget（50% / 80% / 100% 閾値アラート、任意で有効化）
-- `outputs.tf` — Cloud Run URL、WIF Provider 名、Artifact Registry URL 等
+- **Environment variables:**
+  - `AUTH_ACCESS_MODE`: `open` (any Google account) or `allowlist` (restricted to matching emails/domains; template default)
+  - `ALLOWED_EMAILS`: Comma-separated allowed email addresses
+  - `ALLOWED_DOMAINS`: Comma-separated allowed email domains (e.g., Google Workspace domains)
+- **Implementation:**
+  - Validate `email` and `emailVerified === true` in both the Better Auth OAuth callback hook and SvelteKit `hooks.server.ts`.
+  - Storing the allowlist in environment variables keeps **Firestore reads at 0**. Apps requiring dynamic in-app user management can swap this check to an `allowed_users` Firestore collection later.
+  - For personal/small-group apps, setting the Google OAuth consent screen to **Testing** (up to 100 test users) or **Internal** (Google Workspace) adds a first line of defense.
+
+### 5.2 E2E Test Email / Password Login (Env-Gated)
+Because automating production Google OAuth in Playwright E2E tests is brittle, an opt-in E2E login path is provided:
+
+- **Environment variables:**
+  - `ENABLE_E2E_PASSWORD_AUTH=false` (MUST remain `"false"` in production Cloud Run)
+  - `E2E_TEST_EMAIL` / `E2E_TEST_PASSWORD` (set only during local/CI E2E runs)
+- **Design:**
+  - **UI (`login-03`):** Render the email/password form only when `ENABLE_E2E_PASSWORD_AUTH=true`; otherwise render only the Google Sign-In button.
+  - **Backend (Better Auth):** Production (`false`) runs in pure Stateless Cookie mode. When `true`, initialize Better Auth with Bun's built-in in-memory SQLite (`bun:sqlite` `:memory:`) and seed one test user on startup, enabling real `signIn.email` session cookie issuance without extra dependencies or a persistent DB.
+
+### 5.3 Local Development (Firestore Emulator)
+Local development uses the official Google Cloud Firestore Emulator container with zero GCP cost or network dependency:
+
+- **Root `compose.yaml`:** Runs `gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators` executing `gcloud emulators firestore start --host-port=0.0.0.0:8080` (`wslc compose up -d` on Windows).
+- **SDK integration:** Setting `FIRESTORE_EMULATOR_HOST=localhost:8080` makes `@google-cloud/firestore` automatically route traffic to the local emulator with zero application code branching.
+
+---
+
+## 6. Terraform Implementation (`web-app/infra/gcp/`)
+
+Implemented under [web-app/infra/gcp/](../../web-app/infra/gcp/) in alignment with OKF v0.3 operational governance:[^okf-spec-v03]
+
+- `versions.tf` / `providers.tf` — Terraform and `hashicorp/google` provider config (with GCS remote state guide)
+- `variables.tf` / `terraform.tfvars.example` — `project_id`, `region` (`asia-northeast1`), `service_name`, `budget_amount_usd` (`10`), `github_repository`, `auth_access_mode`, etc.
+- `apis.tf` — Enables `run`, `firestore`, `artifactregistry`, `secretmanager`, `iam`, `iamcredentials`, `cloudresourcemanager` (and optional `billingbudgets`)
+- `iam.tf` — Cloud Run runtime SA and optional GitHub Actions WIF Pool / Provider + Deployer SA
+- `artifact_registry.tf` — Docker repository with cleanup policies (delete untagged >7d, tagged >30d, keep recent `artifact_keep_count` versions)
+- `secrets.tf` — Secret Manager secret containers (two-step bootstrap; values populated out-of-band)
+- `firestore.tf` — Firestore Standard (`FIRESTORE_NATIVE`) database
+- `cloud_run.tf` — Cloud Run v2 service (`min_instance_count = 0`, 1 vCPU / 512 MiB, `ENABLE_E2E_PASSWORD_AUTH = "false"`)
+- `budget.tf` — Optional Cloud Billing Budget (50% / 80% / 100% alert thresholds)
+- `outputs.tf` — Cloud Run URL, WIF Provider name, Artifact Registry URL, etc.
 
 [^cloud-run-pricing]: Google Cloud Run Pricing & Always Free Tier
 [^firestore-pricing]: Cloud Firestore Pricing & Free Quota

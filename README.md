@@ -1,8 +1,10 @@
+> Language: **English** | [日本語](./docs/jp/README.md)
+
 # lean-cloud-app-template
 
 A **<$10/month**, **scale-to-zero (`min-instance = 0`)** Cloud Run web & desktop application template built around **Svelte 5 + SvelteKit 3** and **Tauri**.
 
-> **Status:** Light architecture design & ADR finalized (`docs/architecture/`). Next up: GCP Terraform IaC (`web-app/infra/gcp/`) and application scaffolding (`web-app/app/`, `desktop/`).
+> **Status:** Light architecture design, OKF v0.3 ADR, and GCP Terraform IaC (`web-app/infra/gcp/`) are ready. Next up: application scaffolding (`web-app/app/`, `desktop/`).
 
 ---
 
@@ -22,8 +24,8 @@ A **<$10/month**, **scale-to-zero (`min-instance = 0`)** Cloud Run web & desktop
 
 - **Compute (`web-app/app`):** Cloud Run v2 single container (`asia-northeast1`, `min_instance_count = 0`, 1 vCPU / 512 MiB, `*.run.app`) running Svelte 5 + SvelteKit 3 (`adapter-bun`) on a hardened **distroless** image
 - **UI:** `shadcn-svelte` (Home: `sidebar-07`, Login: `login-03`) + `shadcn-svelte` agent skill under `web-app/app/`
-- **Authentication:** `better-auth` in **Stateless Cookie** mode + **Google OAuth 2.0 only** (`openid`, `email`, `profile`, `$0`)
-- **Datastore:** **Cloud Firestore (Standard Edition, Native Mode)** within the Always Free daily tier, accessed server-side only via the Cloud Run runtime service account
+- **Authentication:** `better-auth` in **Stateless Cookie** mode + **Google OAuth 2.0 only** (`openid`, `email`, `profile`, `$0`), with optional env-based user/domain allowlist and an E2E-only password login toggle (`ENABLE_E2E_PASSWORD_AUTH=false` in production)
+- **Datastore:** **Cloud Firestore (Standard Edition, Native Mode)** within the Always Free daily tier, accessed server-side only via the Cloud Run runtime service account (local dev uses the official Firestore Emulator via `compose.yaml`)
 - **Desktop (`desktop`):** Tauri wrapper around `web-app/app` (delegates Google OAuth to the OS browser and returns via Deep Link)
 - **Infra & Guardrails (`web-app/infra/gcp`):** Terraform for Cloud Run v2, Firestore, Artifact Registry (cleanup policy), Secret Manager, Workload Identity Federation (OIDC), Cloud Logging, and Cloud Billing Budget alerts (`$5` / `$8` / `$10`)
 - **Design Docs:** [light-architecture.drawio](./docs/architecture/light-architecture.drawio) | [ADRs (OKF v0.3)](./docs/adr/index.md) | [ADR-0001](./docs/adr/0001-light-architecture.md)
@@ -44,12 +46,13 @@ Tracked in [Issue #2](https://github.com/theta-myd/lean-cloud-app-template/issue
 lean-cloud-app-template/
 ├── .github/
 │   ├── ISSUE_TEMPLATE/        # Bug & feature request forms (Issues-only workflow)
-│   ├── workflows/             # CI secret scanning (Gitleaks)
+│   ├── workflows/             # CI secret scanning (Gitleaks) & Terraform validate
 │   ├── CONTRIBUTING.md
 │   └── dependabot.yml
 ├── docs/
-│   ├── adr/                   # OKF v0.3 Architecture Decision Records (ADRs)
-│   └── architecture/          # .drawio / .drawio.svg architecture diagrams
+│   ├── adr/                   # OKF v0.3 Architecture Decision Records (English canonical)
+│   ├── architecture/          # .drawio / .drawio.svg architecture diagrams
+│   └── jp/                    # Synchronized Japanese documentation mirrors
 ├── web-app/
 │   ├── app/                   # Svelte 5 + SvelteKit 3 (adapter-bun) + shadcn-svelte + better-auth
 │   └── infra/
@@ -57,11 +60,21 @@ lean-cloud-app-template/
 │       ├── aws/               # Placeholder for future AWS CDK
 │       └── azure/             # Placeholder for future Azure Bicep
 ├── desktop/                   # Tauri desktop wrapper
+├── AGENTS.md                  # Shared repository rules for AI agents
+├── GEMINI.md                  # Antigravity / Gemini workspace rules (includes AGENTS.md)
+├── compose.yaml               # Local Firestore Emulator container
 ├── .gitleaks.toml
 ├── .gitignore
 ├── LICENSE                    # MIT License
 └── README.md
 ```
+
+---
+
+## Documentation Language Policy
+
+- **English** is the canonical language for all documentation, ADRs, diagrams, and agent rules.
+- Synchronized **Japanese mirrors** for key human-facing docs live under [`docs/jp/`](./docs/jp/README.md). See [AGENTS.md](./AGENTS.md) for contributor and agent rules.
 
 ---
 
