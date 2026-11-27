@@ -1,3 +1,18 @@
 project_id   = "your-gcp-project-id"
 region       = "asia-northeast1"
 service_name = "lean-cloud-app"
+
+# Access control ('allowlist' or 'open')
+auth_access_mode = "allowlist"
+allowed_emails   = ""
+allowed_domains  = ""
+
+# Optional: GitHub Actions keyless OIDC deployment ('owner/repo')
+github_repository = ""
+
+# Optional: Monthly budget alerts in USD ($5 / $8 / $10 at default 10)
+billing_account_id = ""
+budget_amount_usd  = 10
+
+# Two-step bootstrap: keep false on initial apply, add secret versions, then set true
+enable_secret_env_refs = false
