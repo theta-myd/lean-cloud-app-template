@@ -50,7 +50,8 @@ This file defines shared rules for all AI coding agents and contributors working
 - **Local development (Firestore):** Use root `compose.yaml` (`gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators`, `FIRESTORE_EMULATOR_HOST=localhost:8080`; on Windows run via `wslc compose up -d`).
 - **Terraform (`web-app/infra/gcp/`):** Keep HCL formatted per `terraform fmt`, pass `terraform validate`, enforce Artifact Registry cleanup policies, and keep the two-step Secret Manager bootstrap (`enable_secret_env_refs = false` -> add versions -> `true`).
 - **Rust (Tauri / future `web-app/api/`):** Follow `cargo`, `clippy`, and `rustfmt`.
-- **UI Components:** Use `shadcn-svelte` blocks (`sidebar-07`, `login-03`) and the `shadcn-svelte` skill placed under `web-app/app/`.
+- **UI Components & Svelte Skills:** Use `shadcn-svelte` blocks (`sidebar-07`, `login-03`), `mode-watcher` for Light/Dark/System themes, and follow the local agent skills placed under `web-app/app/.agents/skills/` (`shadcn-svelte`, `svelte-code-writer`, `svelte-core-bestpractices`).
+- **SvelteKit Routing Policy (Light Architecture):** Prefer SvelteKit `load()` functions and form `actions` (`+page.server.ts` / `+layout.server.ts`) as the default for data loading and mutations. Do NOT add custom `+server.ts` API endpoints except for asynchronous/background jobs, health checks (`/api/health`), webhooks, or external/auth integrations (`/api/auth/*`).
 
 ---
 
