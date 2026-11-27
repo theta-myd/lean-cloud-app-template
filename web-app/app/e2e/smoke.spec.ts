@@ -1,4 +1,6 @@
 import { expect, test } from '@playwright/test';
+import { AppShellPage } from './pages/app-shell-page';
+import { LoginPage } from './pages/login-page';
 
 const E2E_EMAIL = process.env.E2E_TEST_EMAIL || 'e2e@example.com';
 const E2E_PASSWORD = process.env.E2E_TEST_PASSWORD || 'e2e-local-password-1234';
@@ -19,52 +21,44 @@ test.describe('Light architecture smoke tests', () => {
 	});
 
 	test('unauthenticated / redirects to /login', async ({ page }) => {
+		const loginPage = new LoginPage(page);
+
 		await page.goto('/');
 		await expect(page).toHaveURL(/\/login$/);
-		await expect(page.getByText('Welcome back')).toBeVisible();
-		await expect(page.getByRole('button', { name: 'Continue with Google' })).toBeVisible();
-		await expect(page.getByText('Local / E2E Test Login')).toBeVisible();
+		await expect(loginPage.heading).toBeVisible();
+		await expect(loginPage.googleSignInButton).toBeVisible();
+		await expect(loginPage.localLoginSeparator).toBeVisible();
 	});
 
 	test('login, theme switching, navigation, and sign out work end-to-end', async ({ page }) => {
-		await page.goto('/login');
+		const loginPage = new LoginPage(page);
+		const appShell = new AppShellPage(page);
 
-		const html = page.locator('html');
+		await loginPage.goto();
 
-		await page.getByRole('button', { name: 'Toggle theme' }).click();
-		await page.getByRole('menuitem', { name: 'Dark' }).click();
-		await expect(html).toHaveClass(/\bdark\b/);
+		await loginPage.selectTheme('Dark');
+		await expect(loginPage.html).toHaveClass(/\bdark\b/);
 
-		await page.getByRole('button', { name: 'Toggle theme' }).click();
-		await page.getByRole('menuitem', { name: 'Light' }).click();
-		await expect(html).not.toHaveClass(/\bdark\b/);
+		await loginPage.selectTheme('Light');
+		await expect(loginPage.html).not.toHaveClass(/\bdark\b/);
 
-		await page.getByRole('button', { name: 'Toggle theme' }).click();
-		await page.getByRole('menuitem', { name: 'System' }).click();
-		await expect(page.getByRole('menuitem', { name: 'System' })).toBeHidden();
+		await loginPage.selectTheme('System');
+		await expect(loginPage.themeMenuItem('System')).toBeHidden();
 
-		await page.getByLabel('Email').fill(E2E_EMAIL);
-		await page.getByLabel('Password').fill(E2E_PASSWORD);
-		await page.getByRole('button', { name: 'Sign in with Email' }).click();
+		await loginPage.signInWithEmail(E2E_EMAIL, E2E_PASSWORD);
 
 		await expect(page).toHaveURL(/\/$/);
-		await expect(page.getByLabel('breadcrumb').getByText('Overview')).toBeVisible();
+		await expect(appShell.breadcrumbItem('Overview')).toBeVisible();
+		await expect(appShell.userMenuTrigger()).toBeVisible();
 
-		const userMenuTrigger = page.getByRole('button', { name: /Local E2E User/ });
-		await expect(userMenuTrigger).toBeVisible();
-
-		await userMenuTrigger.click();
-		await page.getByRole('menuitem', { name: 'Licenses' }).click();
+		await appShell.navigateToLicenses();
 		await expect(page).toHaveURL(/\/licenses$/);
-		await expect(page.getByLabel('breadcrumb').getByText('Licenses')).toBeVisible();
+		await expect(appShell.breadcrumbItem('Licenses')).toBeVisible();
 
-		await userMenuTrigger.click();
-		await page.getByRole('menuitem', { name: 'Theme' }).click();
-		await page.getByRole('menuitem', { name: 'Dark' }).click();
-		await expect(html).toHaveClass(/\bdark\b/);
+		await appShell.selectTheme('Dark');
+		await expect(appShell.html).toHaveClass(/\bdark\b/);
 
-		await userMenuTrigger.click();
-		await page.getByRole('menuitem', { name: 'Log out' }).click();
+		await appShell.signOut();
 		await expect(page).toHaveURL(/\/login$/);
 
 		await page.goto('/');
