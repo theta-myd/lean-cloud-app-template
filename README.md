@@ -2,14 +2,14 @@
 
 A **<$10/month**, **scale-to-zero (`min-instance = 0`)** Cloud Run web & desktop application template built around **Svelte 5 + SvelteKit 3** and **Tauri**.
 
-> **Status:** Initial repository scaffolding. Architecture design (`.drawio`), application code, and Terraform IaC are being developed iteratively with a focus on the **Light** architecture first.
+> **Status:** Light architecture design & ADR finalized (`docs/architecture/`). Next up: GCP Terraform IaC (`web-app/infra/gcp/`) and application scaffolding (`web-app/app/`, `desktop/`).
 
 ---
 
 ## Concept & Cost Target
 
-- **Target monthly cost:** **<$10/month** at low/idle traffic
-- **Scale-to-zero first:** Cloud Run services run with `min-instance = 0`
+- **Target monthly cost:** **<$10/month** (typically **$0–$5/month**, idle **$0/month**)
+- **Scale-to-zero first:** Cloud Run services run with `min_instance_count = 0` and avoid always-on fixed-cost services (no Cloud SQL, no Cloud Load Balancing)
 - **Single-source template:** Start lean with the **Light** single-container setup, while keeping the structure ready for a future **Standard** multi-service upgrade
 
 ---
@@ -18,17 +18,19 @@ A **<$10/month**, **scale-to-zero (`min-instance = 0`)** Cloud Run web & desktop
 
 ### 1. Light Architecture (Current Focus)
 
-Optimized to keep infrastructure costs near zero while preserving a clean SvelteKit + BFF + Desktop workflow:
+![Light Architecture](./docs/architecture/light-architecture.drawio.svg)
 
-- **Web App (`web-app/app`):** Svelte 5 + SvelteKit 3 (`adapter-bun`), `shadcn-svelte` (with `shadcn-svelte` agent skill), `better-auth`, packaged into a hardened **distroless** container
-- **Datastore:** Low-cost / scale-to-zero datastore (design in progress under `docs/architecture/`)
-- **Authentication:** `better-auth` + Google OAuth (with system-browser + Deep Link flow planned for Desktop)
-- **Desktop (`desktop`):** Tauri wrapper around the web app
-- **Infra (`web-app/infra/gcp`):** Terraform for Google Cloud (Cloud Run `min-instance = 0`, Artifact Registry, Secret Manager, Workload Identity Federation)
+- **Compute (`web-app/app`):** Cloud Run v2 single container (`asia-northeast1`, `min_instance_count = 0`, 1 vCPU / 512 MiB, `*.run.app`) running Svelte 5 + SvelteKit 3 (`adapter-bun`) on a hardened **distroless** image
+- **UI:** `shadcn-svelte` (Home: `sidebar-07`, Login: `login-03`) + `shadcn-svelte` agent skill under `web-app/app/`
+- **Authentication:** `better-auth` in **Stateless Cookie** mode + **Google OAuth 2.0 only** (`openid`, `email`, `profile`, `$0`)
+- **Datastore:** **Cloud Firestore (Standard Edition, Native Mode)** within the Always Free daily tier, accessed server-side only via the Cloud Run runtime service account
+- **Desktop (`desktop`):** Tauri wrapper around `web-app/app` (delegates Google OAuth to the OS browser and returns via Deep Link)
+- **Infra & Guardrails (`web-app/infra/gcp`):** Terraform for Cloud Run v2, Firestore, Artifact Registry (cleanup policy), Secret Manager, Workload Identity Federation (OIDC), Cloud Logging, and Cloud Billing Budget alerts (`$5` / `$8` / `$10`)
+- **Design Docs:** [light-architecture.drawio](./docs/architecture/light-architecture.drawio) | [ADR-001](./docs/architecture/ADR-001-light-architecture.md)
 
 ### 2. Standard Architecture (Planned Roadmap)
 
-For workloads requiring a dedicated backend API and relational database with Row-Level Security (RLS):
+Tracked in [Issue #2](https://github.com/theta-myd/lean-cloud-app-template/issues/2) for workloads requiring a dedicated backend API and relational database with Row-Level Security (RLS):
 
 - **Backend API (`web-app/api`):** Rust (`Connect RPC + Axum + sqlx + RLS`)
 - **Database:** PostgreSQL (note: Cloud SQL has no native scale-to-zero and typically costs ~$10–$15+/month minimum, which is why **Light** is prioritized first)
@@ -46,7 +48,7 @@ lean-cloud-app-template/
 │   ├── CONTRIBUTING.md
 │   └── dependabot.yml
 ├── docs/
-│   └── architecture/          # .drawio architecture diagrams & ADRs
+│   └── architecture/          # .drawio / .drawio.svg diagrams & ADRs
 ├── web-app/
 │   ├── app/                   # Svelte 5 + SvelteKit 3 (adapter-bun) + shadcn-svelte + better-auth
 │   └── infra/
@@ -68,7 +70,7 @@ This is a **public template repository**. Never commit real credentials or envir
 
 - Only commit `*.example` files (`.env.example`, `terraform.tfvars.example`) with dummy placeholder values (`CHANGE_ME`).
 - Real `.env*`, `*.tfvars`, `*.tfstate*`, `*.pem`, `*.key`, and service account JSON files are blocked via `.gitignore`.
-- CI authentication to Google Cloud should use **Workload Identity Federation (OIDC)** instead of long-lived JSON service account keys.
+- CI authentication to Google Cloud uses **Workload Identity Federation (OIDC)** instead of long-lived JSON service account keys.
 - All commits to `main` are scanned with **Gitleaks** (`.github/workflows/secret-scan.yml`).
 
 ---

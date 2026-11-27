@@ -1,0 +1,14 @@
+# Local development services for lean-cloud-app-template
+# Start with: wslc compose up -d   (or: docker compose up -d)
+
+services:
+  firestore-emulator:
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators
+    ports:
+      - "8080:8080"
+    command:
+      - gcloud
+      - emulators
+      - firestore
+      - start
+      - --host-port=0.0.0.0:8080
