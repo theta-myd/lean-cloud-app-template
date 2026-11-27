@@ -13,8 +13,10 @@ Frontend and BFF application for the **Light** architecture:
 ## Local Development
 
 ```bash
-# 1. Start the local Firestore Emulator from repository root
-wslc compose up -d   # or: docker compose up -d
+# 1. Start the local Firestore Emulator (Docker Compose from repo root, or wslc run on Windows)
+docker compose up -d
+# Windows wslc (no compose subcommand):
+# wslc run -d --rm --name firestore-emulator -p 8080:8080 gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators gcloud emulators firestore start --host-port=0.0.0.0:8080
 
 # 2. Configure environment variables
 cp .env.example .env

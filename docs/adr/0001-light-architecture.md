@@ -18,7 +18,7 @@ x-adr-deciders:
   - "human:theta"
 generated:
   by: "antigravity/gemini-4"
-  at: "2026-11-27T13:15:00+09:00"
+  at: "2026-11-27T18:30:00+09:00"
 verified:
   - by: "human:theta"
     at: "2026-11-27T13:15:00+09:00"
@@ -141,7 +141,7 @@ Because automating production Google OAuth in Playwright E2E tests is brittle, a
 ### 5.3 Local Development (Firestore Emulator)
 Local development uses the official Google Cloud Firestore Emulator container with zero GCP cost or network dependency:
 
-- **Root `compose.yaml`:** Runs `gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators` executing `gcloud emulators firestore start --host-port=0.0.0.0:8080` (`wslc compose up -d` on Windows).
+- **Root `compose.yaml` / container command:** Runs `gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators` executing `gcloud emulators firestore start --host-port=0.0.0.0:8080` via `docker compose up -d` (or `wslc run -d --rm --name firestore-emulator -p 8080:8080 gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators gcloud emulators firestore start --host-port=0.0.0.0:8080` on Windows, as `wslc` has no `compose` subcommand).
 - **SDK integration:** Setting `FIRESTORE_EMULATOR_HOST=localhost:8080` makes `@google-cloud/firestore` automatically route traffic to the local emulator with zero application code branching.
 
 ---

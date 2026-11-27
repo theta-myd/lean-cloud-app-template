@@ -19,7 +19,7 @@ function formatFirestoreError(err: unknown, mode: 'emulator' | 'cloud' | 'unconf
 	}
 	const detail = err instanceof Error ? err.message : String(err);
 	if (mode === 'emulator') {
-		return `Could not reach the Firestore Emulator. Start it from the repository root with "wslc compose up -d". (${detail})`;
+		return `Could not reach the Firestore Emulator. Start it with "docker compose up -d" or "wslc run -d --rm --name firestore-emulator -p 8080:8080 gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators gcloud emulators firestore start --host-port=0.0.0.0:8080". (${detail})`;
 	}
 	return `Firestore request failed: ${detail}`;
 }
