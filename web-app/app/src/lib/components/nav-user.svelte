@@ -9,6 +9,7 @@
 	import EllipsisVerticalIcon from '@lucide/svelte/icons/ellipsis-vertical';
 	import LogOutIcon from '@lucide/svelte/icons/log-out';
 	import MoonIcon from '@lucide/svelte/icons/moon';
+	import ScaleIcon from '@lucide/svelte/icons/scale';
 	import SunIcon from '@lucide/svelte/icons/sun';
 	import ThemeMenuItems from './theme-menu-items.svelte';
 
@@ -86,6 +87,10 @@
 					<DropdownMenu.Item>
 						<BadgeCheckIcon />
 						Profile
+					</DropdownMenu.Item>
+					<DropdownMenu.Item onclick={() => goto('/licenses')}>
+						<ScaleIcon />
+						Licenses
 					</DropdownMenu.Item>
 					<DropdownMenu.Sub>
 						<DropdownMenu.SubTrigger>
