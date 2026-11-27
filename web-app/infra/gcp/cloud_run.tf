@@ -59,6 +59,18 @@ resource "google_cloud_run_v2_service" "app" {
       }
 
       dynamic "env" {
+        for_each = var.app_url != "" ? {
+          PUBLIC_APP_URL  = var.app_url
+          BETTER_AUTH_URL = var.app_url
+        } : {}
+
+        content {
+          name  = env.key
+          value = env.value
+        }
+      }
+
+      dynamic "env" {
         for_each = local.secret_env_map
 
         content {

@@ -97,3 +97,20 @@ variable "budget_amount_usd" {
   type        = number
   default     = 10
 }
+
+variable "app_url" {
+  description = "Public HTTPS base URL of the app (e.g. Cloud Run *.run.app URL or custom domain). Sets PUBLIC_APP_URL and BETTER_AUTH_URL."
+  type        = string
+  default     = ""
+}
+
+variable "firestore_deletion_policy" {
+  description = "Firestore deletion policy on terraform destroy ('ABANDON' to keep data safe, or 'DELETE' for full teardown in disposable environments)."
+  type        = string
+  default     = "ABANDON"
+
+  validation {
+    condition     = contains(["ABANDON", "DELETE"], var.firestore_deletion_policy)
+    error_message = "firestore_deletion_policy must be either 'ABANDON' or 'DELETE'."
+  }
+}

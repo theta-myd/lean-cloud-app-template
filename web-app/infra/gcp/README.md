@@ -28,6 +28,8 @@ terraform apply
 
 ### 2. Populate Secret Manager versions out-of-band
 
+Capture the generated Cloud Run URL (`terraform output -raw cloud_run_url`), register `<cloud_run_url>/api/auth/callback/google` as an Authorized Redirect URI in your Google OAuth 2.0 Web Client, and populate the secrets:
+
 ```bash
 # Example using gcloud CLI (never commit these values)
 printf '%s' 'REPLACE_WITH_32_BYTE_RANDOM_SECRET' | gcloud secrets versions add lean-cloud-app-better-auth-secret --data-file=-
@@ -35,13 +37,15 @@ printf '%s' 'REPLACE_WITH_GOOGLE_CLIENT_ID'      | gcloud secrets versions add l
 printf '%s' 'REPLACE_WITH_GOOGLE_CLIENT_SECRET'  | gcloud secrets versions add lean-cloud-app-google-client-secret --data-file=-
 ```
 
-### 3. Enable Secret Manager mounts on Cloud Run
+### 3. Enable Secret Manager mounts & app URL on Cloud Run
 
-Set `enable_secret_env_refs = true` in `terraform.tfvars` and run:
+Set `app_url = "<cloud_run_url>"` and `enable_secret_env_refs = true` in `terraform.tfvars` and run:
 
 ```bash
 terraform apply
 ```
+
+> **Note on `terraform destroy`:** By default, `firestore_deletion_policy` is `"ABANDON"` so the `(default)` Firestore database is kept safe. For disposable test environments where you want `terraform destroy` to delete the Firestore database too, set `firestore_deletion_policy = "DELETE"`.
 
 ## Remote State (Recommended for CI/CD)
 
