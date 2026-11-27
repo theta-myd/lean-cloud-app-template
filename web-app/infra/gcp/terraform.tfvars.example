@@ -14,5 +14,11 @@ github_repository = ""
 billing_account_id = ""
 budget_amount_usd  = 10
 
+# Public Cloud Run URL (set to `terraform output -raw cloud_run_url` in Step 2)
+app_url = ""
+
+# Firestore destroy behavior ('ABANDON' keeps DB safe; 'DELETE' wipes DB on destroy)
+firestore_deletion_policy = "ABANDON"
+
 # Two-step bootstrap: keep false on initial apply, add secret versions, then set true
 enable_secret_env_refs = false
