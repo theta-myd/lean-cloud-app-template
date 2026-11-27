@@ -18,7 +18,7 @@ const envMock = vi.hoisted(() => ({
 
 vi.mock('$app/env/private', () => envMock);
 
-import { getServerConfig } from '#lib/server/env.js';
+import { assertProductionAuthSecret, getServerConfig } from '#lib/server/env.js';
 
 function resetEnv(overrides: Partial<typeof envMock> = {}): void {
 	for (const key of Object.keys(envMock) as Array<keyof typeof envMock>) {
@@ -77,5 +77,25 @@ describe('getServerConfig', () => {
 
 		resetEnv({ AUTH_ACCESS_MODE: 'unknown-mode' });
 		expect(getServerConfig().authAccessMode).toBe('allowlist');
+	});
+
+	it('enforces BETTER_AUTH_SECRET in production unless E2E auth is enabled', () => {
+		resetEnv({ BETTER_AUTH_SECRET: 'CHANGE_ME_GENERATE_32_BYTE_RANDOM_SECRET' });
+		const placeholderConfig = getServerConfig();
+		expect(placeholderConfig.betterAuthSecretConfigured).toBe(false);
+		expect(() => assertProductionAuthSecret(placeholderConfig, 'production')).toThrow();
+		expect(() => assertProductionAuthSecret(placeholderConfig, 'development')).not.toThrow();
+
+		resetEnv({ BETTER_AUTH_SECRET: 'short-secret' });
+		expect(getServerConfig().betterAuthSecretConfigured).toBe(false);
+		expect(() => assertProductionAuthSecret(getServerConfig(), 'production')).toThrow();
+
+		resetEnv({ ENABLE_E2E_PASSWORD_AUTH: 'true' });
+		expect(() => assertProductionAuthSecret(getServerConfig(), 'production')).not.toThrow();
+
+		resetEnv({ BETTER_AUTH_SECRET: 'a'.repeat(32) });
+		const validConfig = getServerConfig();
+		expect(validConfig.betterAuthSecretConfigured).toBe(true);
+		expect(() => assertProductionAuthSecret(validConfig, 'production')).not.toThrow();
 	});
 });

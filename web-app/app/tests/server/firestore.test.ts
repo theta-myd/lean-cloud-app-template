@@ -9,8 +9,11 @@ vi.mock('#lib/server/env.js', () => ({
 
 import {
 	FirestoreUnavailableError,
+	deleteTodo,
 	getFirestore,
-	getFirestoreStatus
+	getFirestoreStatus,
+	isValidFirestoreDocId,
+	toggleTodo
 } from '#lib/server/firestore.js';
 
 function baseConfig(overrides: Partial<ServerConfig> = {}): ServerConfig {
@@ -18,6 +21,7 @@ function baseConfig(overrides: Partial<ServerConfig> = {}): ServerConfig {
 		appUrl: 'http://localhost:5173',
 		betterAuthUrl: 'http://localhost:5173',
 		betterAuthSecret: 'unit-test-only-secret-0000000000',
+		betterAuthSecretConfigured: true,
 		googleClientId: '',
 		googleClientSecret: '',
 		googleOAuthConfigured: false,
@@ -70,5 +74,20 @@ describe('getFirestoreStatus & getFirestore', () => {
 			emulatorHost: null
 		});
 		expect(() => getFirestore()).toThrow(FirestoreUnavailableError);
+	});
+
+	it('validates Firestore document IDs and blocks path traversal or reserved IDs', async () => {
+		expect(isValidFirestoreDocId('task_123-ABC')).toBe(true);
+		expect(isValidFirestoreDocId('')).toBe(false);
+		expect(isValidFirestoreDocId('a/b')).toBe(false);
+		expect(isValidFirestoreDocId('../other')).toBe(false);
+		expect(isValidFirestoreDocId('__reserved__')).toBe(false);
+		expect(isValidFirestoreDocId('x'.repeat(129))).toBe(false);
+
+		getServerConfigMock.mockReturnValue(
+			baseConfig({ firestoreEmulatorHost: 'localhost:8080' })
+		);
+		await expect(toggleTodo('user-1', 'bad/id', true)).rejects.toThrow('Invalid task id.');
+		await expect(deleteTodo('user-1', '__proto__')).rejects.toThrow('Invalid task id.');
 	});
 });

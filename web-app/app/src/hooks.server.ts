@@ -5,6 +5,7 @@ import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { isEmailAllowed } from '#lib/server/allowlist.js';
 import { getAuth } from '#lib/server/auth.js';
 import { getServerConfig } from '#lib/server/env.js';
+import { applySecurityHeaders } from '#lib/server/security-headers.js';
 
 const PUBLIC_PATHS = ['/login', '/unauthorized', '/api/health'];
 
@@ -15,9 +16,15 @@ function isPublicPath(pathname: string): boolean {
 export const handle: Handle = async ({ event, resolve }) => {
 	const config = getServerConfig();
 	const auth = await getAuth();
+	const { pathname } = event.url;
+	const securityOptions = {
+		isDev: process.env.NODE_ENV !== 'production',
+		isApi: pathname.startsWith('/api/')
+	};
 
-	if (event.url.pathname.startsWith('/api/auth')) {
-		return svelteKitHandler({ event, resolve, auth, building });
+	if (pathname.startsWith('/api/auth')) {
+		const response = await svelteKitHandler({ event, resolve, auth, building });
+		return applySecurityHeaders(response, event.url, securityOptions);
 	}
 
 	const sessionResult = await auth.api.getSession({
@@ -31,8 +38,6 @@ export const handle: Handle = async ({ event, resolve }) => {
 		? isEmailAllowed(sessionResult.user.email, sessionResult.user.emailVerified, config)
 		: false;
 
-	const { pathname } = event.url;
-
 	if (pathname === '/login') {
 		if (event.locals.user && event.locals.isAuthorized) {
 			redirect(302, '/');
@@ -40,32 +45,40 @@ export const handle: Handle = async ({ event, resolve }) => {
 		if (event.locals.user && !event.locals.isAuthorized) {
 			redirect(302, '/unauthorized');
 		}
-		return resolve(event);
+		return applySecurityHeaders(await resolve(event), event.url, securityOptions);
 	}
 
 	if (isPublicPath(pathname)) {
-		return resolve(event);
+		return applySecurityHeaders(await resolve(event), event.url, securityOptions);
 	}
 
 	if (!event.locals.user) {
 		if (pathname.startsWith('/api/')) {
-			return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-				status: 401,
-				headers: { 'content-type': 'application/json' }
-			});
+			return applySecurityHeaders(
+				new Response(JSON.stringify({ error: 'Unauthorized' }), {
+					status: 401,
+					headers: { 'content-type': 'application/json' }
+				}),
+				event.url,
+				securityOptions
+			);
 		}
 		redirect(302, '/login');
 	}
 
 	if (!event.locals.isAuthorized) {
 		if (pathname.startsWith('/api/')) {
-			return new Response(JSON.stringify({ error: 'Forbidden' }), {
-				status: 403,
-				headers: { 'content-type': 'application/json' }
-			});
+			return applySecurityHeaders(
+				new Response(JSON.stringify({ error: 'Forbidden' }), {
+					status: 403,
+					headers: { 'content-type': 'application/json' }
+				}),
+				event.url,
+				securityOptions
+			);
 		}
 		redirect(302, '/unauthorized');
 	}
 
-	return resolve(event);
+	return applySecurityHeaders(await resolve(event), event.url, securityOptions);
 };

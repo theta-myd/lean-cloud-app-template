@@ -28,6 +28,7 @@ function makeConfig(overrides: Partial<ServerConfig> = {}): ServerConfig {
 		appUrl: 'http://localhost:5173',
 		betterAuthUrl: 'http://localhost:5173',
 		betterAuthSecret: 'unit-test-only-secret-0000000000',
+		betterAuthSecretConfigured: true,
 		googleClientId: '',
 		googleClientSecret: '',
 		googleOAuthConfigured: false,
@@ -156,5 +157,18 @@ describe('hooks.server handle', () => {
 		expect(homeEvent.locals.session).toEqual(session);
 		expect(homeEvent.locals.isAuthorized).toBe(true);
 		expect(homeEvent.locals.authMode).toBe('stateless');
+		expect(response.headers.get('x-content-type-options')).toBe('nosniff');
+		expect(response.headers.get('x-frame-options')).toBe('DENY');
+		expect(response.headers.get('content-security-policy')).toContain("frame-ancestors 'none'");
+	});
+
+	it('applies security headers and no-store cache control on /api/* responses', async () => {
+		const apiResponse = await handle({
+			event: makeEvent('/api/health') as unknown as Parameters<Handle>[0]['event'],
+			resolve
+		});
+		expect(apiResponse.status).toBe(200);
+		expect(apiResponse.headers.get('x-content-type-options')).toBe('nosniff');
+		expect(apiResponse.headers.get('cache-control')).toBe('no-store');
 	});
 });

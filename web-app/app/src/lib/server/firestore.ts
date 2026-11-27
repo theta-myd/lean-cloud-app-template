@@ -75,8 +75,31 @@ export function getFirestore(): Firestore {
 	return firestoreInstance;
 }
 
+const DOC_ID_PATTERN = /^[A-Za-z0-9_-]{1,128}$/;
+
+export function isValidFirestoreDocId(id: string): boolean {
+	if (!DOC_ID_PATTERN.test(id)) {
+		return false;
+	}
+	return !(id.startsWith('__') && id.endsWith('__'));
+}
+
+function assertValidUserId(userId: string): string {
+	const trimmed = userId.trim();
+	if (
+		!trimmed ||
+		trimmed.includes('/') ||
+		trimmed === '.' ||
+		trimmed === '..' ||
+		(trimmed.startsWith('__') && trimmed.endsWith('__'))
+	) {
+		throw new Error('Invalid user id.');
+	}
+	return trimmed;
+}
+
 function todosCollection(userId: string) {
-	return getFirestore().collection('users').doc(userId).collection('todos');
+	return getFirestore().collection('users').doc(assertValidUserId(userId)).collection('todos');
 }
 
 export async function listTodos(userId: string): Promise<TodoItem[]> {
@@ -108,6 +131,9 @@ export async function createTodo(userId: string, title: string): Promise<TodoIte
 }
 
 export async function toggleTodo(userId: string, id: string, completed: boolean): Promise<void> {
+	if (!isValidFirestoreDocId(id)) {
+		throw new Error('Invalid task id.');
+	}
 	await todosCollection(userId).doc(id).update({
 		completed,
 		updatedAt: new Date().toISOString()
@@ -115,6 +141,9 @@ export async function toggleTodo(userId: string, id: string, completed: boolean)
 }
 
 export async function updateTodoTitle(userId: string, id: string, title: string): Promise<void> {
+	if (!isValidFirestoreDocId(id)) {
+		throw new Error('Invalid task id.');
+	}
 	await todosCollection(userId).doc(id).update({
 		title,
 		updatedAt: new Date().toISOString()
@@ -122,5 +151,8 @@ export async function updateTodoTitle(userId: string, id: string, title: string)
 }
 
 export async function deleteTodo(userId: string, id: string): Promise<void> {
+	if (!isValidFirestoreDocId(id)) {
+		throw new Error('Invalid task id.');
+	}
 	await todosCollection(userId).doc(id).delete();
 }
