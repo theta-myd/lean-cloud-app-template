@@ -22,7 +22,10 @@
 	let editingTitle = $state('');
 	let pendingActions = $state<Record<string, 'toggle' | 'update' | 'delete'>>({});
 
+	const isSavingEdit = $derived(editingId !== null && pendingActions[editingId] === 'update');
+
 	function startEditing(id: string, title: string) {
+		if (isSavingEdit || pendingActions[id]) return;
 		editingId = id;
 		editingTitle = title;
 	}
@@ -32,7 +35,11 @@
 		editingTitle = '';
 	}
 
-	const handleCreate: SubmitFunction = () => {
+	const handleCreate: SubmitFunction = ({ cancel }) => {
+		if (creating) {
+			cancel();
+			return;
+		}
 		creating = true;
 		return async ({ result, update }) => {
 			try {
@@ -50,7 +57,11 @@
 		id: string,
 		kind: 'toggle' | 'update' | 'delete'
 	): SubmitFunction {
-		return () => {
+		return ({ cancel }) => {
+			if (pendingActions[id]) {
+				cancel();
+				return;
+			}
 			pendingActions[id] = kind;
 			return async ({ result, update }) => {
 				try {
@@ -273,7 +284,7 @@
 										variant="ghost"
 										size="icon-sm"
 										aria-label="Edit task"
-										disabled={Boolean(rowPending)}
+										disabled={Boolean(rowPending) || isSavingEdit}
 										onclick={() => startEditing(todo.id, todo.title)}
 									>
 										<PencilIcon />
