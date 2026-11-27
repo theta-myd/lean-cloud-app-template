@@ -50,3 +50,34 @@ Create a versioned GCS bucket out-of-band, uncomment the `backend "gcs"` block i
 ```bash
 terraform init -backend-config="bucket=YOUR_TFSTATE_BUCKET"
 ```
+
+## Keyless CI/CD Deployment (GitHub Actions + WIF)
+
+[`.github/workflows/deploy-gcp.yml`](../../../.github/workflows/deploy-gcp.yml) builds the distroless image from `web-app/app/Dockerfile`, pushes it to Artifact Registry, and deploys it to Cloud Run v2 using Workload Identity Federation (OIDC) with **zero static JSON service account keys**.
+
+### 1. Provision WIF & Deployer IAM via Terraform
+
+Set `github_repository = "<owner>/<repo>"` in `terraform.tfvars`, run `terraform apply`, and read the generated outputs:
+
+```bash
+terraform output workload_identity_provider_name
+terraform output deployer_service_account_email
+```
+
+### 2. Configure GitHub Repository Variables
+
+Add the following **Repository Variables** under **Settings → Secrets and variables → Actions → Variables** (no GitHub Secrets are required for GCP authentication):
+
+| Variable | Required | Default | Source / Value |
+|---|---|---|---|
+| `GCP_PROJECT_ID` | Yes | — | Your Google Cloud Project ID (`var.project_id`) |
+| `GCP_WORKLOAD_IDENTITY_PROVIDER` | Yes | — | `terraform output -raw workload_identity_provider_name` |
+| `GCP_DEPLOYER_SERVICE_ACCOUNT` | Yes | — | `terraform output -raw deployer_service_account_email` |
+| `GCP_REGION` | No | `asia-northeast1` | Matches `var.region` |
+| `GCP_SERVICE_NAME` | No | `lean-cloud-app` | Matches `var.service_name` |
+| `GCP_AR_REPOSITORY` | No | `GCP_SERVICE_NAME` | Artifact Registry repository ID (`var.service_name`) |
+
+### 3. Triggers & Guardrails
+
+- **Triggers:** Manual via `workflow_dispatch`, and automatically on pushes to `main` touching `web-app/app/**` or `.github/workflows/deploy-gcp.yml` **only when** the three required `GCP_*` repository variables are configured (unconfigured template forks skip automatic deploys cleanly).
+- **Light cost & auth guardrails:** Deploys with `--min-instances=0 --cpu-throttling` (scale-to-zero) and enforces `ENABLE_E2E_PASSWORD_AUTH=false`, while preserving Terraform-managed `AUTH_ACCESS_MODE` (`allowlist` by default), `ALLOWED_EMAILS`, `ALLOWED_DOMAINS`, `GOOGLE_CLOUD_PROJECT`, Secret Manager mounts, and `allUsers` invoker IAM.
