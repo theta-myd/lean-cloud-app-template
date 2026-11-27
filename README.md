@@ -26,7 +26,7 @@ A **<$10/month**, **scale-to-zero (`min-instance = 0`)** Cloud Run web & desktop
 - **Datastore:** **Cloud Firestore (Standard Edition, Native Mode)** within the Always Free daily tier, accessed server-side only via the Cloud Run runtime service account
 - **Desktop (`desktop`):** Tauri wrapper around `web-app/app` (delegates Google OAuth to the OS browser and returns via Deep Link)
 - **Infra & Guardrails (`web-app/infra/gcp`):** Terraform for Cloud Run v2, Firestore, Artifact Registry (cleanup policy), Secret Manager, Workload Identity Federation (OIDC), Cloud Logging, and Cloud Billing Budget alerts (`$5` / `$8` / `$10`)
-- **Design Docs:** [light-architecture.drawio](./docs/architecture/light-architecture.drawio) | [ADR-001](./docs/architecture/ADR-001-light-architecture.md)
+- **Design Docs:** [light-architecture.drawio](./docs/architecture/light-architecture.drawio) | [ADRs (OKF v0.3)](./docs/adr/index.md) | [ADR-0001](./docs/adr/0001-light-architecture.md)
 
 ### 2. Standard Architecture (Planned Roadmap)
 
@@ -48,7 +48,8 @@ lean-cloud-app-template/
 │   ├── CONTRIBUTING.md
 │   └── dependabot.yml
 ├── docs/
-│   └── architecture/          # .drawio / .drawio.svg diagrams & ADRs
+│   ├── adr/                   # OKF v0.3 Architecture Decision Records (ADRs)
+│   └── architecture/          # .drawio / .drawio.svg architecture diagrams
 ├── web-app/
 │   ├── app/                   # Svelte 5 + SvelteKit 3 (adapter-bun) + shadcn-svelte + better-auth
 │   └── infra/

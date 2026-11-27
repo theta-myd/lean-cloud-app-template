@@ -1,9 +1,51 @@
-# ADR-001: Light 構成アーキテクチャ設計（GCP / <$10/month / Scale-to-Zero）
+---
+type: ADR
+title: "ADR-0001: Light 構成アーキテクチャ設計（GCP / <$10/month / Scale-to-Zero）"
+description: "Google Cloud の Cloud Run v2（min_instance_count=0）、Svelte 5 + SvelteKit 3（adapter-bun + distroless）、Better Auth Stateless Cookie + Google OAuth、Cloud Firestore Standard、Tauri による <$10/month Light 構成を定義する。"
+tags:
+  - architecture
+  - gcp
+  - cloud-run
+  - firestore
+  - sveltekit
+  - better-auth
+  - tauri
+  - terraform
+status: stable
+x-adr-id: "ADR-0001"
+x-adr-status: "accepted"
+x-adr-deciders:
+  - "human:theta"
+generated:
+  by: "antigravity/gemini-4"
+  at: "2026-11-27T12:10:00+09:00"
+verified:
+  - by: "human:theta"
+    at: "2026-11-27T12:15:00+09:00"
+stale_after: "2027-05-27T00:00:00Z"
+sources:
+  - id: cloud-run-pricing
+    resource: https://cloud.google.com/run/pricing
+    title: "Google Cloud Run Pricing & Always Free Tier"
+    author: "team:google-cloud-docs"
+  - id: firestore-pricing
+    resource: https://cloud.google.com/firestore/pricing
+    title: "Cloud Firestore Pricing & Free Quota"
+    author: "team:google-cloud-docs"
+  - id: roadmap-standard-issue
+    resource: https://github.com/theta-myd/lean-cloud-app-template/issues/2
+    title: "Roadmap: Add standard architecture variant (Rust API + PostgreSQL)"
+    author: "human:theta"
+  - id: okf-spec-v03
+    resource: https://github.com/open-knowledge-format/open-knowledge-format
+    title: "Open Knowledge Format (OKF) v0.3 Specification"
+    author: "team:open-knowledge-format"
+---
 
-- **ステータス:** Accepted
-- **決定日:** 2026-11-27
-- **対象リポジトリ:** `lean-cloud-app-template`
-- **関連図:** [light-architecture.drawio.svg](./light-architecture.drawio.svg)（編集可能ソース: [light-architecture.drawio](./light-architecture.drawio)）
+# ADR-0001: Light 構成アーキテクチャ設計（GCP / <$10/month / Scale-to-Zero）
+
+- **関連図:** [light-architecture.drawio.svg](../architecture/light-architecture.drawio.svg)（編集可能ソース: [light-architecture.drawio](../architecture/light-architecture.drawio)）
+- **実装先:** [web-app/infra/gcp/](../../web-app/infra/gcp/) / [compose.yaml](../../compose.yaml) / [web-app/app/.env.example](../../web-app/app/.env.example)
 
 ---
 
@@ -13,7 +55,7 @@
 
 1. **コスト上限:** 通常〜低トラフィック運用で **月額 $10 未満（アイドル時は $0 付近）** に収める。
 2. **Scale-to-Zero 徹底:** 常時稼働インスタンス（Cloud SQL、Cloud Load Balancing 等）を排除し、`min_instance_count = 0` で運用する。
-3. **モノレポ保守性:** 単一コンテナ構成で開始しつつ、将来の **Standard 構成**（Rust API + PostgreSQL + RLS、参照: Issue #2）へ拡張可能なディレクトリ構造を維持する。
+3. **モノレポ保守性:** 単一コンテナ構成で開始しつつ、将来の **Standard 構成**（Rust API + PostgreSQL + RLS）[^roadmap-standard-issue] へ拡張可能なディレクトリ構造を維持する。
 4. **Public テンプレート安全性:** 実シークレットやサービスアカウント鍵（JSON）をリポジトリ・CI ともに持たない。
 
 ---
@@ -22,12 +64,12 @@
 
 | レイヤー | 採用技術 / サービス | 選定理由 |
 | :--- | :--- | :--- |
-| **Compute** | **Cloud Run v2**（単一コンテナ、`asia-northeast1` Tier 1、`min_instance_count = 0`、1 vCPU / 512 MiB、リクエストベース課金） | Scale-to-Zero 対応。無料枠（月 200 万リクエスト / 18 万 vCPU 秒 / 36 万 GiB 秒）が広い。 |
+| **Compute** | **Cloud Run v2**（単一コンテナ、`asia-northeast1` Tier 1、`min_instance_count = 0`、1 vCPU / 512 MiB、リクエストベース課金） | Scale-to-Zero 対応。無料枠（月 200 万リクエスト / 18 万 vCPU 秒 / 36 万 GiB 秒）が広い。[^cloud-run-pricing] |
 | **Web App / BFF** | **Svelte 5 + SvelteKit 3**（`adapter-bun`）+ **distroless** | 単一コンテナで SSR・BFF・認証を完結。distroless 非 root 実行でイメージサイズと攻撃面を最小化。 |
 | **UI** | **shadcn-svelte**（Home: `sidebar-07` / Login: `login-03`） | 折りたたみアイコン付きダッシュボードとログイン画面を標準ブロックベースで構築。 |
 | **認証** | **Better Auth（Stateless Cookie モード）** + **Google OAuth 2.0 のみ**（`openid`, `email`, `profile`） | Better Auth（MIT OSS）＋ Google OAuth 基本スコープはいずれも無料。Stateless 暗号化 HttpOnly Cookie により、セッション検証ごとの DB 読み取りをゼロ化。 |
 | **Desktop** | **Tauri**（`web-app/app` ラッパー） | Google は組込 WebView 内の OAuth をブロック（`disallowed_useragent`）するため、OS 標準ブラウザで認証しカスタム URL スキーム（Deep Link）でセッションを戻す設計とする。 |
-| **データストア** | **Cloud Firestore（Standard Edition, Native Mode）**（`asia-northeast1`） | 永年無料枠（1 GiB / 日次 50,000 Read / 20,000 Write / 20,000 Delete）内で運用可能。Cloud Run ランタイム SA（ADC）経由でサーバーサイド専用アクセスとし、クライアントへ直接公開しない。 |
+| **データストア** | **Cloud Firestore（Standard Edition, Native Mode）**（`asia-northeast1`） | 永年無料枠（1 GiB / 日次 50,000 Read / 20,000 Write / 20,000 Delete）内で運用可能。Cloud Run ランタイム SA（ADC）経由でサーバーサイド専用アクセスとし、クライアントへ直接公開しない。[^firestore-pricing] |
 | **Ingress** | **Cloud Run 標準 HTTPS URL（`*.run.app`）** | Cloud Load Balancing は固定費（月額約 $18〜）が発生し予算を超過するため不採用。独自ドメインや CDN が必要になった場合は、任意オプションとして **Firebase Hosting**（無料枠あり）を前段に追加する。 |
 | **Registry** | **Artifact Registry** + Cleanup Policy | distroless イメージを保管し、Cleanup Policy で最新 2〜3 世代のみ保持して無料枠（0.5 GiB）内に収める。 |
 | **シークレット** | **Secret Manager** | `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` 等を格納（無料枠: 6 アクティブバージョン / 月 10,000 アクセス）。 |
@@ -42,15 +84,15 @@
 
 | サービス | 無料枠（概要） | アイドル時 | 小規模運用時 |
 | :--- | :--- | :--- | :--- |
-| Cloud Run v2 | 200万 req / 18万 vCPU秒 / 36万 GiB秒（請求アカウント単位） | $0 | $0〜$2 |
-| Cloud Firestore (Standard) | 1 GiB / 日次 5万 R / 2万 W / 2万 D（1 DB/プロジェクト） | $0 | $0〜$2 |
+| Cloud Run v2 | 200万 req / 18万 vCPU秒 / 36万 GiB秒（請求アカウント単位）[^cloud-run-pricing] | $0 | $0〜$2 |
+| Cloud Firestore (Standard) | 1 GiB / 日次 5万 R / 2万 W / 2万 D（1 DB/プロジェクト）[^firestore-pricing] | $0 | $0〜$2 |
 | Artifact Registry | 0.5 GiB（請求アカウント単位） | $0 | $0（Cleanup Policy 前提） |
 | Secret Manager | 6 バージョン / 1万アクセス | $0 | $0 |
 | Cloud Logging | 50 GiB / 月 | $0 | $0 |
 | **合計** | — | **$0 / 月** | **$0〜$5 / 月** |
 
 ### 主な予算超過リスクと対策
-- **Artifact Registry の肥大化:** イメージが蓄積すると 0.5 GiB を超えて課金されるため、Terraform 側で Cleanup Policy（直近 2〜3 タグのみ保持）を必須化する。
+- **Artifact Registry の肥大化:** イメージが蓄積すると 0.5 GiB を超えて課金されるため、Terraform 側で Cleanup Policy（直近 3 世代保持 + untagged 7日 / tagged 30日削除）を必須化する。
 - **Cloud Run のアウトバウンド転送・コールドスタート多発:** 大容量静的アセットの配信が増えた場合は、前段に Firebase Hosting（CDN）または Cloud Storage を検討する。
 - **Firestore の無制限クエリ:** セッション確認を Stateless Cookie に逃がしているため通常読み取りは少ないが、一覧取得には必ずページネーション（`limit`）を実装する。
 
@@ -102,17 +144,22 @@ Playwright 等による E2E テストでは Google 本番 OAuth フローの自�
 
 ---
 
-## 6. 次フェーズ：Terraform リソース構成案（`web-app/infra/gcp/`）
+## 6. Terraform リソース構成（`web-app/infra/gcp/`）
 
-次フェーズでは以下の構成で Terraform を実装する予定。
+[web-app/infra/gcp/](../../web-app/infra/gcp/) に以下のリソースを実装済みです。[^okf-spec-v03]
 
 - `versions.tf` / `providers.tf` — Terraform / `hashicorp/google` プロバイダ定義（Remote State 対応ガイド付き）
-- `variables.tf` / `terraform.tfvars.example` — `project_id`, `region`（`asia-northeast1`）, `service_name`, `budget_amount`（`10`）, `github_repo` 等
-- `apis.tf` — 必要 API の有効化（`run.googleapis.com`, `firestore.googleapis.com`, `artifactregistry.googleapis.com`, `secretmanager.googleapis.com`, `iam.googleapis.com`, `iamcredentials.googleapis.com`, `billingbudgets.googleapis.com`）
+- `variables.tf` / `terraform.tfvars.example` — `project_id`, `region`（`asia-northeast1`）, `service_name`, `budget_amount_usd`（`10`）, `github_repository`, `auth_access_mode` 等
+- `apis.tf` — 必要 API の有効化（`run.googleapis.com`, `firestore.googleapis.com`, `artifactregistry.googleapis.com`, `secretmanager.googleapis.com`, `iam.googleapis.com`, `iamcredentials.googleapis.com`, `cloudresourcemanager.googleapis.com`, 任意で `billingbudgets.googleapis.com`）
 - `iam.tf` — Cloud Run ランタイム SA、GitHub Actions 用 Workload Identity Pool / Provider + Deploy SA
-- `artifact_registry.tf` — Docker リポジトリ＋Cleanup Policy（最新 3 世代保持）
-- `secrets.tf` — Secret Manager シークレット枠作成（値は Git 管理外で登録）
-- `firestore.tf` — Firestore Standard（Native Mode）データベース
-- `cloud_run.tf` — Cloud Run v2 サービス（`min_instance_count = 0`, 1 vCPU / 512 MiB, 非 root distroless 前提）
-- `budget.tf` — Cloud Billing Budget（$5 / $8 / $10 閾値アラート、任意で有効化）
+- `artifact_registry.tf` — Docker リポジトリ＋Cleanup Policy（untagged 7日 / tagged 30日削除 + 最新 `artifact_keep_count` 世代保持）
+- `secrets.tf` — Secret Manager シークレット枠作成（2 段階ブートストラップ、値は Git 管理外で登録）
+- `firestore.tf` — Firestore Standard（`FIRESTORE_NATIVE`）データベース
+- `cloud_run.tf` — Cloud Run v2 サービス（`min_instance_count = 0`, 1 vCPU / 512 MiB, 非 root distroless 前提, `ENABLE_E2E_PASSWORD_AUTH = "false"` 固定）
+- `budget.tf` — Cloud Billing Budget（50% / 80% / 100% 閾値アラート、任意で有効化）
 - `outputs.tf` — Cloud Run URL、WIF Provider 名、Artifact Registry URL 等
+
+[^cloud-run-pricing]: Google Cloud Run Pricing & Always Free Tier
+[^firestore-pricing]: Cloud Firestore Pricing & Free Quota
+[^roadmap-standard-issue]: Roadmap: Add standard architecture variant (Rust API + PostgreSQL)
+[^okf-spec-v03]: Open Knowledge Format (OKF) v0.3 Specification
