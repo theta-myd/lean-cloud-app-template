@@ -19,6 +19,8 @@ FROM oven/bun:distroless AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=8080
+ENV PROTOCOL_HEADER=x-forwarded-proto
+ENV HOST_HEADER=x-forwarded-host
 COPY --from=builder /app/build ./build
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json

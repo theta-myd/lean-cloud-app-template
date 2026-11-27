@@ -30,6 +30,8 @@ const {
 vi.mock('#lib/server/firestore.js', () => ({
 	FirestoreUnavailableError: MockFirestoreUnavailableError,
 	getFirestoreStatus: getFirestoreStatusMock,
+	isValidFirestoreDocId: (id: string) =>
+		/^[A-Za-z0-9_-]{1,128}$/.test(id) && !(id.startsWith('__') && id.endsWith('__')),
 	listTodos: listTodosMock,
 	createTodo: createTodoMock,
 	toggleTodo: toggleTodoMock,
@@ -172,5 +174,38 @@ describe('todos +page.server.ts', () => {
 		);
 		expect(deleteOk).toEqual({ action: 'delete', ok: true });
 		expect(deleteTodoMock).toHaveBeenCalledWith('user-1', 't1');
+	});
+
+	it('rejects path-traversal task IDs and sanitizes cloud-mode errors', async () => {
+		const badToggle = await actions.toggle(
+			makeActionEvent({ id: '../other-user/todos/t1', completed: 'true' }) as unknown as Parameters<
+				typeof actions.toggle
+			>[0]
+		);
+		expect(isActionFailure(badToggle) && badToggle.status).toBe(400);
+		expect(toggleTodoMock).not.toHaveBeenCalled();
+
+		const badDelete = await actions.delete(
+			makeActionEvent({ id: 'a/b' }) as unknown as Parameters<typeof actions.delete>[0]
+		);
+		expect(isActionFailure(badDelete) && badDelete.status).toBe(400);
+		expect(deleteTodoMock).not.toHaveBeenCalled();
+
+		getFirestoreStatusMock.mockReturnValue({
+			mode: 'cloud',
+			projectId: 'my-prod-project',
+			emulatorHost: null
+		});
+		const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+		listTodosMock.mockRejectedValueOnce(new Error('PERMISSION_DENIED internal token detail'));
+
+		const errResult = (await load({
+			locals: { user: { id: 'user-1' } }
+		} as unknown as Parameters<typeof load>[0])) as {
+			connectionError: string | null;
+		};
+		expect(errResult.connectionError).toBe('Firestore request failed. Please try again later.');
+		expect(errResult.connectionError).not.toContain('PERMISSION_DENIED');
+		consoleSpy.mockRestore();
 	});
 });

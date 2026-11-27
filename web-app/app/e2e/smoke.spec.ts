@@ -9,6 +9,9 @@ test.describe('Light architecture smoke tests', () => {
 	test('GET /api/health returns 200 with light architecture status', async ({ request }) => {
 		const response = await request.get('/api/health');
 		expect(response.status()).toBe(200);
+		expect(response.headers()['x-content-type-options']).toBe('nosniff');
+		expect(response.headers()['x-frame-options']).toBe('DENY');
+		expect(response.headers()['cache-control']).toBe('no-store');
 
 		const body = (await response.json()) as {
 			status: string;
@@ -23,7 +26,11 @@ test.describe('Light architecture smoke tests', () => {
 	test('unauthenticated / redirects to /login', async ({ page }) => {
 		const loginPage = new LoginPage(page);
 
-		await page.goto('/');
+		const response = await page.goto('/');
+		expect(response?.headers()['x-content-type-options']).toBe('nosniff');
+		expect(response?.headers()['x-frame-options']).toBe('DENY');
+		expect(response?.headers()['referrer-policy']).toBe('strict-origin-when-cross-origin');
+		expect(response?.headers()['content-security-policy']).toContain("frame-ancestors 'none'");
 		await expect(page).toHaveURL(/\/login$/);
 		await expect(loginPage.heading).toBeVisible();
 		await expect(loginPage.googleSignInButton).toBeVisible();

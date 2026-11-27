@@ -1,6 +1,6 @@
 import { betterAuth, type BetterAuthOptions } from 'better-auth';
 import { getMigrations } from 'better-auth/db/migration';
-import { getServerConfig, type ServerConfig } from './env.js';
+import { assertProductionAuthSecret, getServerConfig, type ServerConfig } from './env.js';
 
 type AuthInstance = ReturnType<typeof betterAuth<BetterAuthOptions>>;
 
@@ -8,6 +8,8 @@ let cachedAuthPromise: Promise<AuthInstance> | null = null;
 let cachedModeKey = '';
 
 async function createAuth(config: ServerConfig): Promise<AuthInstance> {
+	assertProductionAuthSecret(config);
+
 	const socialProviders = config.googleOAuthConfigured
 		? {
 				google: {
@@ -17,9 +19,15 @@ async function createAuth(config: ServerConfig): Promise<AuthInstance> {
 			}
 		: undefined;
 
+	const isDevOrE2e = config.enableE2ePasswordAuth || process.env.NODE_ENV !== 'production';
 	const trustedOrigins = Array.from(
-		new Set([config.appUrl, config.betterAuthUrl, 'http://localhost:5173'])
+		new Set([
+			config.appUrl,
+			config.betterAuthUrl,
+			...(isDevOrE2e ? ['http://localhost:5173'] : [])
+		])
 	);
+	const useSecureCookies = config.betterAuthUrl.startsWith('https://');
 
 	if (config.enableE2ePasswordAuth) {
 		const { Database } = await import('bun:sqlite');
@@ -34,6 +42,9 @@ async function createAuth(config: ServerConfig): Promise<AuthInstance> {
 				enabled: true
 			},
 			socialProviders,
+			advanced: {
+				useSecureCookies
+			},
 			session: {
 				expiresIn: 60 * 60 * 24 * 7,
 				cookieCache: {
@@ -71,6 +82,9 @@ async function createAuth(config: ServerConfig): Promise<AuthInstance> {
 		secret: config.betterAuthSecret,
 		trustedOrigins,
 		socialProviders,
+		advanced: {
+			useSecureCookies
+		},
 		session: {
 			expiresIn: 60 * 60 * 24 * 7,
 			cookieCache: {
@@ -88,6 +102,7 @@ export async function getAuth(): Promise<AuthInstance> {
 	const config = getServerConfig();
 	const modeKey = [
 		config.betterAuthUrl,
+		config.betterAuthSecretConfigured,
 		config.enableE2ePasswordAuth,
 		config.e2eTestEmail,
 		config.googleOAuthConfigured

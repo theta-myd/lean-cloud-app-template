@@ -6,6 +6,7 @@ export interface ServerConfig {
 	appUrl: string;
 	betterAuthUrl: string;
 	betterAuthSecret: string;
+	betterAuthSecretConfigured: boolean;
 	googleClientId: string;
 	googleClientSecret: string;
 	googleOAuthConfigured: boolean;
@@ -19,6 +20,8 @@ export interface ServerConfig {
 	firestoreEmulatorHost: string;
 }
 
+const MIN_AUTH_SECRET_LENGTH = 32;
+
 function parseCsv(value: string | undefined): string[] {
 	if (!value) return [];
 	return value
@@ -30,8 +33,11 @@ function parseCsv(value: string | undefined): string[] {
 export function getServerConfig(): ServerConfig {
 	const appUrl = env.PUBLIC_APP_URL?.trim() || 'http://localhost:5173';
 	const betterAuthUrl = env.BETTER_AUTH_URL?.trim() || appUrl;
+	const rawSecret = env.BETTER_AUTH_SECRET?.trim() || '';
+	const betterAuthSecretConfigured =
+		rawSecret.length >= MIN_AUTH_SECRET_LENGTH && !rawSecret.startsWith('CHANGE_ME');
 	const betterAuthSecret =
-		env.BETTER_AUTH_SECRET?.trim() || 'dev-fallback-secret-do-not-use-in-production-32b';
+		rawSecret || 'dev-fallback-secret-do-not-use-in-production-32b';
 	const googleClientId = env.GOOGLE_CLIENT_ID?.trim() || '';
 	const googleClientSecret = env.GOOGLE_CLIENT_SECRET?.trim() || '';
 	const isRealGoogleId =
@@ -46,6 +52,7 @@ export function getServerConfig(): ServerConfig {
 		appUrl,
 		betterAuthUrl,
 		betterAuthSecret,
+		betterAuthSecretConfigured,
 		googleClientId,
 		googleClientSecret,
 		googleOAuthConfigured: isRealGoogleId && isRealGoogleSecret,
@@ -58,4 +65,19 @@ export function getServerConfig(): ServerConfig {
 		googleCloudProject: env.GOOGLE_CLOUD_PROJECT?.trim() || '',
 		firestoreEmulatorHost: env.FIRESTORE_EMULATOR_HOST?.trim() || ''
 	};
+}
+
+export function assertProductionAuthSecret(
+	config: ServerConfig,
+	nodeEnv: string | undefined = process.env.NODE_ENV
+): void {
+	if (
+		nodeEnv === 'production' &&
+		!config.enableE2ePasswordAuth &&
+		!config.betterAuthSecretConfigured
+	) {
+		throw new Error(
+			'BETTER_AUTH_SECRET must be set to a random secret of at least 32 characters in production.'
+		);
+	}
 }

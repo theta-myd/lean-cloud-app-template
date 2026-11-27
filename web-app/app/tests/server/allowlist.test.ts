@@ -7,6 +7,7 @@ function makeConfig(overrides: Partial<ServerConfig> = {}): ServerConfig {
 		appUrl: 'http://localhost:5173',
 		betterAuthUrl: 'http://localhost:5173',
 		betterAuthSecret: 'unit-test-only-secret-0000000000',
+		betterAuthSecretConfigured: true,
 		googleClientId: '',
 		googleClientSecret: '',
 		googleOAuthConfigured: false,

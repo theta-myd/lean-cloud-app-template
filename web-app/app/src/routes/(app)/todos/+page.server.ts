@@ -4,6 +4,7 @@ import {
 	createTodo,
 	deleteTodo,
 	getFirestoreStatus,
+	isValidFirestoreDocId,
 	listTodos,
 	toggleTodo,
 	updateTodoTitle,
@@ -21,7 +22,8 @@ function formatFirestoreError(err: unknown, mode: 'emulator' | 'cloud' | 'unconf
 	if (mode === 'emulator') {
 		return `Could not reach the Firestore Emulator. Start it with "docker compose up -d" or "wslc run -d --rm --name firestore-emulator -p 8080:8080 gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators gcloud emulators firestore start --host-port=0.0.0.0:8080". (${detail})`;
 	}
-	return `Firestore request failed: ${detail}`;
+	console.error('[firestore] request failed:', err);
+	return 'Firestore request failed. Please try again later.';
 }
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -81,8 +83,8 @@ export const actions: Actions = {
 		const data = await request.formData();
 		const id = String(data.get('id') ?? '').trim();
 		const nextCompleted = String(data.get('completed') ?? '') === 'true';
-		if (!id) {
-			return fail(400, { action: 'toggle', error: 'Missing task id.' });
+		if (!isValidFirestoreDocId(id)) {
+			return fail(400, { action: 'toggle', error: 'Invalid task id.' });
 		}
 
 		const status = getFirestoreStatus();
@@ -100,7 +102,10 @@ export const actions: Actions = {
 		const data = await request.formData();
 		const id = String(data.get('id') ?? '').trim();
 		const title = String(data.get('title') ?? '').trim();
-		if (!id || !title) {
+		if (!isValidFirestoreDocId(id)) {
+			return fail(400, { action: 'update', error: 'Invalid task id.' });
+		}
+		if (!title) {
 			return fail(400, { action: 'update', error: 'Task id and title are required.' });
 		}
 		if (title.length > MAX_TITLE_LENGTH) {
@@ -124,8 +129,8 @@ export const actions: Actions = {
 
 		const data = await request.formData();
 		const id = String(data.get('id') ?? '').trim();
-		if (!id) {
-			return fail(400, { action: 'delete', error: 'Missing task id.' });
+		if (!isValidFirestoreDocId(id)) {
+			return fail(400, { action: 'delete', error: 'Invalid task id.' });
 		}
 
 		const status = getFirestoreStatus();
