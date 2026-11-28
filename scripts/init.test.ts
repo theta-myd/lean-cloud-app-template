@@ -102,7 +102,8 @@ describe('scripts/init CLI parsing & validation', () => {
 		expect(() => validateVariant('other')).toThrow();
 
 		expect(validateCloud(undefined)).toBe('gcp');
-		expect(() => validateCloud('aws')).toThrow('Issue #2');
+		expect(() => validateCloud('aws')).toThrow('#54');
+		expect(() => validateCloud('azure')).toThrow('#55');
 
 		expect(validateAppName('my-app-1')).toBe('my-app-1');
 		expect(() => validateAppName('ab')).toThrow();

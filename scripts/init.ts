@@ -44,7 +44,7 @@ Initialize this repository from lean-cloud-app-template into a focused Light or 
 
 Options:
   --variant <light|standard>  Target architecture variant (prompted interactively if omitted)
-  --cloud <gcp>               Target cloud provider (default: gcp; AWS/Azure tracked in Issue #2)
+  --cloud <gcp>               Target cloud provider (default: gcp; AWS: #54, Azure: #55)
   --name <slug>               Optional app slug (3-18 lowercase alphanumeric/hyphen chars, e.g. my-app)
   --keep-api                  With --variant=light, keep web-app/api/ and proto/ as reference examples
   --dry-run                   Preview planned file changes without modifying anything
@@ -129,7 +129,7 @@ export function validateCloud(cloud: string | undefined): CloudProvider {
 		return normalized as CloudProvider;
 	}
 	throw new Error(
-		`Unsupported --cloud "${cloud}". Currently supported: ${SUPPORTED_CLOUDS.join(', ')} (AWS and Azure are tracked in Issue #2).`
+		`Unsupported --cloud "${cloud}". Currently supported: ${SUPPORTED_CLOUDS.join(', ')} (AWS is tracked in #54; Azure is tracked in #55).`
 	);
 }
 

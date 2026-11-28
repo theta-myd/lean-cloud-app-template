@@ -4,7 +4,7 @@
 
 A **<$10/month**, **scale-to-zero (`min-instance = 0`)** Cloud Run web & desktop application template built around **Svelte 5 + SvelteKit 3** and **Tauri**, with an optional **Standard** multi-service upgrade (**Rust Connect RPC + PostgreSQL 18 RLS**).
 
-> **Status:** Both **Light** (Cloud Run v2 + Cloud Firestore, verified on GCP) and **Standard** (Cloud Run v2 BFF + internal Rust Connect RPC API + Cloud SQL PostgreSQL 18 + Direct VPC Egress + RLS, verified locally) architectures are implemented, along with `bun run init` to specialize a new repository into either variant.
+> **Status:** Both **Light** (Cloud Run v2 + Cloud Firestore) and **Standard** (Cloud Run v2 BFF + internal Rust Connect RPC API + Cloud SQL PostgreSQL 18 + Direct VPC Egress + Private Cloud DNS + RLS) architectures are implemented and verified end-to-end on Google Cloud, along with `bun run init` to specialize a new repository into either variant. See [CHANGELOG.md](./CHANGELOG.md).
 
 ---
 
@@ -71,14 +71,14 @@ What `bun run init` does for each variant:
 
 ![Standard Architecture](./docs/architecture/gcp/standard-architecture.drawio.svg)
 
-Tracked in [Issue #2](https://github.com/theta-myd/lean-cloud-app-template/issues/2) for workloads requiring a dedicated backend API and relational database with Row-Level Security (RLS):
+For workloads requiring a dedicated backend API and relational database with Row-Level Security (RLS):
 
 - **BFF (`web-app/app`):** Svelte 5 + SvelteKit 3 with Better Auth DB sessions in PostgreSQL (`auth` schema) and Connect RPC client (`src/lib/server/standard/`) forwarding short-lived HS256 `x-app-user-token` + GCP OIDC ID tokens to the internal API
 - **Backend API (`web-app/api`):** Rust (`Connect RPC + Axum + sqlx + PostgreSQL 18 RLS`) on internal-only Cloud Run v2 (`INGRESS_TRAFFIC_INTERNAL_ONLY` + Cloud Run IAM) + `--migrate-only` Cloud Run Job
 - **Database:** Cloud SQL for PostgreSQL 18 (Private IP only + Direct VPC Egress `$0`; note: Cloud SQL has no native scale-to-zero and typically costs `~$10–$15+/month` minimum, which is why **Light** is prioritized for `<$10/month`)
-- **Infra (`web-app/infra/gcp/standard`):** Terraform for Custom VPC + Private Services Access, Cloud SQL for PostgreSQL 18 (Private IP only), Cloud Run v2 (`app`, internal `api`, and `migrate` Job via Direct VPC Egress), least-privilege SAs, Secret Manager, WIF (OIDC), and Cloud Billing Budget alerts (`$10` / `$15` / `$20`)
+- **Infra (`web-app/infra/gcp/standard`):** Terraform for Custom VPC + Private Services Access + Private Cloud DNS (`run.app.` -> `private.googleapis.com`), Cloud SQL for PostgreSQL 18 (Private IP only), Cloud Run v2 (`app`, internal `api`, and `migrate` Job via Direct VPC Egress), least-privilege SAs, Secret Manager, WIF (OIDC), and Cloud Billing Budget alerts (`$10` / `$15` / `$20`)
 - **Design Docs:** [gcp/standard-architecture.drawio](./docs/architecture/gcp/standard-architecture.drawio) | [Architecture Diagrams](./docs/architecture/README.md) | [ADR-0002](./docs/adr/0002-standard-architecture.md)
-- **Multi-cloud roadmap:** Future `web-app/infra/aws` (AWS CDK) and `web-app/infra/azure` (Bicep)
+- **Multi-cloud roadmap:** Future `web-app/infra/aws` (AWS CDK, [#54](https://github.com/theta-myd/lean-cloud-app-template/issues/54)) and `web-app/infra/azure` (Azure Bicep, [#55](https://github.com/theta-myd/lean-cloud-app-template/issues/55))
 
 ---
 
