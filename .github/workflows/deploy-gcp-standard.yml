@@ -1,0 +1,151 @@
+name: Deploy Standard to Cloud Run (GCP)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "web-app/app/**"
+      - "web-app/api/**"
+      - "proto/**"
+      - ".github/workflows/deploy-gcp-standard.yml"
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-gcp-standard
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build, Migrate & Deploy Standard Cloud Run v2
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (vars.GCP_STANDARD_PROJECT_ID != '' &&
+      vars.GCP_STANDARD_WORKLOAD_IDENTITY_PROVIDER != '' &&
+      vars.GCP_STANDARD_DEPLOYER_SERVICE_ACCOUNT != '')
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_STANDARD_PROJECT_ID || vars.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_STANDARD_REGION || vars.GCP_REGION || 'asia-northeast1' }}
+      GCP_SERVICE_NAME: ${{ vars.GCP_STANDARD_SERVICE_NAME || vars.GCP_SERVICE_NAME || 'lean-cloud-app' }}
+      GCP_AR_REPOSITORY: ${{ vars.GCP_STANDARD_AR_REPOSITORY || vars.GCP_STANDARD_SERVICE_NAME || vars.GCP_AR_REPOSITORY || vars.GCP_SERVICE_NAME || 'lean-cloud-app' }}
+    steps:
+      - name: Validate GCP Standard WIF Variables
+        env:
+          GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ vars.GCP_STANDARD_WORKLOAD_IDENTITY_PROVIDER || vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          GCP_DEPLOYER_SERVICE_ACCOUNT: ${{ vars.GCP_STANDARD_DEPLOYER_SERVICE_ACCOUNT || vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$GCP_PROJECT_ID" ] || [ -z "$GCP_WORKLOAD_IDENTITY_PROVIDER" ] || [ -z "$GCP_DEPLOYER_SERVICE_ACCOUNT" ]; then
+            echo "::error::Missing required GitHub repository variables: GCP_STANDARD_PROJECT_ID, GCP_STANDARD_WORKLOAD_IDENTITY_PROVIDER, and GCP_STANDARD_DEPLOYER_SERVICE_ACCOUNT (or GCP_* fallback for manual dispatch). See web-app/infra/gcp/standard/README.md for setup instructions."
+            exit 1
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Authenticate to Google Cloud (Access Token for Artifact Registry)
+        id: auth-docker
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_STANDARD_WORKLOAD_IDENTITY_PROVIDER || vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_STANDARD_DEPLOYER_SERVICE_ACCOUNT || vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
+          token_format: access_token
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Login to Artifact Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.GCP_REGION }}-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.auth-docker.outputs.access_token }}
+
+      - name: Build and Push Rust API Distroless Image
+        id: build-push-api
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: web-app/api/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.GCP_AR_REPOSITORY }}/${{ env.GCP_SERVICE_NAME }}-api:${{ github.sha }}
+            ${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.GCP_AR_REPOSITORY }}/${{ env.GCP_SERVICE_NAME }}-api:latest
+          cache-from: type=gha,scope=standard-api
+          cache-to: type=gha,mode=max,scope=standard-api
+
+      - name: Build and Push Web App Distroless Image
+        id: build-push-app
+        uses: docker/build-push-action@v7
+        with:
+          context: web-app/app
+          file: web-app/app/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.GCP_AR_REPOSITORY }}/${{ env.GCP_SERVICE_NAME }}:${{ github.sha }}
+            ${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.GCP_AR_REPOSITORY }}/${{ env.GCP_SERVICE_NAME }}:latest
+          cache-from: type=gha,scope=standard-app
+          cache-to: type=gha,mode=max,scope=standard-app
+
+      - name: Authenticate to Google Cloud (ADC for Migrations & Cloud Run Deploy)
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_STANDARD_WORKLOAD_IDENTITY_PROVIDER || vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_STANDARD_DEPLOYER_SERVICE_ACCOUNT || vars.GCP_DEPLOYER_SERVICE_ACCOUNT }}
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Update & Execute DB Migration Cloud Run Job
+        env:
+          API_IMAGE_DIGEST: ${{ steps.build-push-api.outputs.digest }}
+        run: |
+          API_IMAGE="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_AR_REPOSITORY}/${GCP_SERVICE_NAME}-api@${API_IMAGE_DIGEST}"
+          gcloud run jobs update "${GCP_SERVICE_NAME}-migrate" \
+            --project="${GCP_PROJECT_ID}" \
+            --region="${GCP_REGION}" \
+            --image="${API_IMAGE}"
+          gcloud run jobs execute "${GCP_SERVICE_NAME}-migrate" \
+            --project="${GCP_PROJECT_ID}" \
+            --region="${GCP_REGION}" \
+            --wait
+
+      - name: Deploy Rust API to Cloud Run v2 (Internal Only)
+        id: deploy-api
+        uses: google-github-actions/deploy-cloudrun@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          service: ${{ env.GCP_SERVICE_NAME }}-api
+          region: ${{ env.GCP_REGION }}
+          image: ${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.GCP_AR_REPOSITORY }}/${{ env.GCP_SERVICE_NAME }}-api@${{ steps.build-push-api.outputs.digest }}
+          flags: --ingress=internal --no-allow-unauthenticated --min-instances=0 --cpu-throttling
+
+      - name: Deploy Web App to Cloud Run v2 (Public)
+        id: deploy-app
+        uses: google-github-actions/deploy-cloudrun@v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          service: ${{ env.GCP_SERVICE_NAME }}
+          region: ${{ env.GCP_REGION }}
+          image: ${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.GCP_AR_REPOSITORY }}/${{ env.GCP_SERVICE_NAME }}@${{ steps.build-push-app.outputs.digest }}
+          env_vars: ENABLE_E2E_PASSWORD_AUTH=false,ARCHITECTURE_VARIANT=standard
+          flags: --min-instances=0 --cpu-throttling
+
+      - name: Write Deployment Summary
+        run: |
+          {
+            echo "### Standard Cloud Run v2 Deployment"
+            echo "- **Region:** \`${GCP_REGION}\`"
+            echo "- **DB Migration Job:** \`${GCP_SERVICE_NAME}-migrate\` (executed with \`--wait\`)"
+            echo "- **API Image:** \`${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_AR_REPOSITORY}/${GCP_SERVICE_NAME}-api@${{ steps.build-push-api.outputs.digest }}\`"
+            echo "- **API Internal URI:** \`${{ steps.deploy-api.outputs.url }}\` (\`--ingress=internal --no-allow-unauthenticated\`)"
+            echo "- **App Image:** \`${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_AR_REPOSITORY}/${GCP_SERVICE_NAME}@${{ steps.build-push-app.outputs.digest }}\`"
+            echo "- **App Public URL:** ${{ steps.deploy-app.outputs.url }}"
+          } >> "$GITHUB_STEP_SUMMARY"
