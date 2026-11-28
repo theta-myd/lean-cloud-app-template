@@ -1,0 +1,111 @@
+syntax = "proto3";
+
+package todo.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// Todo represents a single task item scoped to a tenant workspace.
+// Mirrors the Light architecture TODO sample data model while adding
+// multi-tenant ownership and creator tracking for PostgreSQL RLS.
+message Todo {
+  // Stable task identifier (UUID string).
+  string id = 1;
+  // Owning tenant identifier enforced by PostgreSQL RLS.
+  string tenant_id = 2;
+  // Authenticated user identifier who created the task.
+  string created_by_user_id = 3;
+  // Task title (trimmed, non-empty, up to 200 characters).
+  string title = 4;
+  // Whether the task has been completed.
+  bool completed = 5;
+  // Timestamp when the task was created.
+  google.protobuf.Timestamp created_at = 6;
+  // Timestamp when the task was last updated.
+  google.protobuf.Timestamp updated_at = 7;
+}
+
+// Request to list tasks within a tenant workspace.
+message ListTodosRequest {
+  // Target tenant identifier verified against the caller's memberships.
+  string tenant_id = 1;
+  // Optional maximum number of tasks to return (defaults to 50).
+  int32 page_size = 2;
+}
+
+// Response containing tasks ordered newest-first.
+message ListTodosResponse {
+  // Tasks belonging to the requested tenant.
+  repeated Todo todos = 1;
+}
+
+// Request to create a new task inside a tenant workspace.
+message CreateTodoRequest {
+  // Target tenant identifier verified against the caller's memberships.
+  string tenant_id = 1;
+  // Task title (trimmed, non-empty, up to 200 characters).
+  string title = 2;
+}
+
+// Response containing the newly created task.
+message CreateTodoResponse {
+  // Newly created task.
+  Todo todo = 1;
+}
+
+// Request to update an existing task's title.
+message UpdateTodoRequest {
+  // Target tenant identifier verified against the caller's memberships.
+  string tenant_id = 1;
+  // Identifier of the task to update.
+  string id = 2;
+  // Updated task title (trimmed, non-empty, up to 200 characters).
+  string title = 3;
+}
+
+// Response containing the updated task.
+message UpdateTodoResponse {
+  // Updated task.
+  Todo todo = 1;
+}
+
+// Request to toggle an existing task's completion status.
+message ToggleTodoRequest {
+  // Target tenant identifier verified against the caller's memberships.
+  string tenant_id = 1;
+  // Identifier of the task to update.
+  string id = 2;
+  // Target completion state.
+  bool completed = 3;
+}
+
+// Response containing the updated task.
+message ToggleTodoResponse {
+  // Updated task.
+  Todo todo = 1;
+}
+
+// Request to delete a task from a tenant workspace.
+message DeleteTodoRequest {
+  // Target tenant identifier verified against the caller's memberships.
+  string tenant_id = 1;
+  // Identifier of the task to delete.
+  string id = 2;
+}
+
+// Response confirming task deletion.
+message DeleteTodoResponse {}
+
+// TodoService provides tenant-scoped CRUD operations for the sample TODO
+// application in the Standard architecture.
+service TodoService {
+  // ListTodos returns tasks in the caller's active tenant, ordered newest-first.
+  rpc ListTodos(ListTodosRequest) returns (ListTodosResponse);
+  // CreateTodo creates a new task in the caller's active tenant.
+  rpc CreateTodo(CreateTodoRequest) returns (CreateTodoResponse);
+  // UpdateTodo updates the title of an existing task.
+  rpc UpdateTodo(UpdateTodoRequest) returns (UpdateTodoResponse);
+  // ToggleTodo updates the completion state of an existing task.
+  rpc ToggleTodo(ToggleTodoRequest) returns (ToggleTodoResponse);
+  // DeleteTodo removes an existing task.
+  rpc DeleteTodo(DeleteTodoRequest) returns (DeleteTodoResponse);
+}

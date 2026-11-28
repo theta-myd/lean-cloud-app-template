@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+package tenant.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// Role of an authenticated user within a tenant workspace.
+enum TenantRole {
+  TENANT_ROLE_UNSPECIFIED = 0;
+  TENANT_ROLE_OWNER = 1;
+  TENANT_ROLE_ADMIN = 2;
+  TENANT_ROLE_MEMBER = 3;
+}
+
+// Tenant represents an isolated multi-tenant workspace boundary enforced by
+// PostgreSQL Row-Level Security (RLS).
+message Tenant {
+  // Stable tenant identifier (UUID string).
+  string id = 1;
+  // Human-readable tenant display name.
+  string name = 2;
+  // URL-safe unique slug identifying the tenant.
+  string slug = 3;
+  // Role held by the authenticated caller inside this tenant.
+  TenantRole role = 4;
+  // Whether this tenant is the user's auto-provisioned personal workspace.
+  bool is_personal = 5;
+  // Timestamp when the tenant was created.
+  google.protobuf.Timestamp created_at = 6;
+}
+
+// Request to idempotently ensure the calling user's personal tenant exists.
+message EnsurePersonalTenantRequest {
+  // Optional display name hint used when provisioning a new personal tenant.
+  string display_name = 1;
+}
+
+// Response containing the user's personal tenant.
+message EnsurePersonalTenantResponse {
+  // The user's personal tenant workspace.
+  Tenant tenant = 1;
+  // True when a new personal tenant was created by this call.
+  bool created = 2;
+}
+
+// Request to list all tenants accessible to the authenticated user.
+message ListTenantsRequest {}
+
+// Response containing the authenticated user's tenant memberships.
+message ListTenantsResponse {
+  // Tenants the calling user belongs to.
+  repeated Tenant tenants = 1;
+}
+
+// Request to resolve and verify the caller's active tenant.
+message GetActiveTenantRequest {
+  // Optional preferred tenant ID. When empty, the server resolves the user's
+  // default (personal) tenant.
+  string tenant_id = 1;
+}
+
+// Response containing the verified active tenant.
+message GetActiveTenantResponse {
+  // Active tenant that the calling user is authorized to access.
+  Tenant tenant = 1;
+}
+
+// TenantService manages multi-tenant workspace discovery and personal tenant
+// provisioning for the Standard architecture backend.
+service TenantService {
+  // EnsurePersonalTenant idempotently creates and returns the calling user's
+  // personal workspace.
+  rpc EnsurePersonalTenant(EnsurePersonalTenantRequest) returns (EnsurePersonalTenantResponse);
+  // ListTenants returns all tenants that the calling user belongs to.
+  rpc ListTenants(ListTenantsRequest) returns (ListTenantsResponse);
+  // GetActiveTenant resolves and validates the caller's active tenant.
+  rpc GetActiveTenant(GetActiveTenantRequest) returns (GetActiveTenantResponse);
+}
