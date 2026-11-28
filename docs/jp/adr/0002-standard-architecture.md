@@ -25,7 +25,7 @@
 | **想定月額コスト** | `$10 未満`（アイドル時 `$0` / 小規模 `$0〜$5`） | `約 $12〜$20`（アイドル時 `約 $10〜$12` / 小規模 `約 $12〜$20`） |
 | **コンピュート構成** | Cloud Run v2 単一サービス（`app`） | Cloud Run v2 2 サービス（公開 `app` + 内部専用 `api`）+ 1 Job（`migrate`）、すべて `min_instance_count = 0` |
 | **バックエンド / RPC** | SvelteKit BFF 内 TypeScript（`+page.server.ts`） | 専用 Rust バックエンド（`web-app/api/`、Connect RPC + Axum + `sqlx`）を BFF から呼び出し |
-| **データストア** | Cloud Firestore Standard（日次無料枠） | Cloud SQL for PostgreSQL 17 Enterprise（`db-f1-micro` Zonal、PSA 経由 **Private IP 専用**） |
+| **データストア** | Cloud Firestore Standard（日次無料枠） | Cloud SQL for PostgreSQL 18 Enterprise（`db-f1-micro` Zonal、PSA 経由 **Private IP 専用**） |
 | **認証セッション** | Better Auth Stateless Cookie（DB Read 0 / 端末単位即時失効不可） | Better Auth PostgreSQL アダプタ（`auth` スキーマ、DB セッション + HttpOnly Cookie、端末単位即時失効可） |
 | **マルチテナント分離** | アプリ層の Firestore パス分離 | 4 層多層防御の最終段として PostgreSQL `FORCE ROW LEVEL SECURITY`（`app_user` `NOBYPASSRLS`）を強制 |
 
@@ -48,7 +48,7 @@
 | **UI** | **shadcn-svelte**（Home: アクティブテナント切替付き `sidebar-07` / Login: `login-03`）+ `mode-watcher` | Light 構成の標準 UI 基盤を踏襲しつつ、`TenantService` と連動したテナント表示・切替 UI を追加する。 |
 | **認証** | **Better Auth（PostgreSQL アダプタ）**（専用 `auth` スキーマ / `auth_user`）+ **Google OAuth 2.0 のみ**（`openid`, `email`, `profile`） | PostgreSQL（`auth.session`）の DB セッションと暗号化・署名済み HttpOnly Cookie を組み合わせ、端末単位の即時ログアウト・サーバー側強制失効を実現する。 |
 | **バックエンド API** | **Rust**（`web-app/api/`）— **Connect RPC** + **Axum** + **`sqlx`** + **非 root distroless**（`proto/` 配下の Protobuf 定義を Buf で管理） | 標準 HTTP/2 上の型安全な JSON / Protobuf RPC、`sqlx` による型安全なクエリと組込マイグレーション、高速なコールドスタートと極小 distroless イメージを両立。 |
-| **データベース** | **Cloud SQL for PostgreSQL 17**（Enterprise エディション、`db-f1-micro`、Zonal、10 GB SSD、**Private IP 専用** `ipv4_enabled = false`、自動バックアップ） | ネイティブ RLS と自動バックアップを備えた最小コストのマネージド PostgreSQL。Public IPv4 課金と外部公開面を完全に排除する。 |
+| **データベース** | **Cloud SQL for PostgreSQL 18**（Enterprise エディション、`db-f1-micro`、Zonal、10 GB SSD、**Private IP 専用** `ipv4_enabled = false`、自動バックアップ） | ネイティブ RLS と自動バックアップを備えた最小コストのマネージド PostgreSQL。Public IPv4 課金と外部公開面を完全に排除する。 |
 | **Desktop** | **Tauri**（`desktop/`、`web-app/app` ラッパー） | ADR-0001 と同一設計。WebView の `disallowed_useragent` 制限を回避するため、OS 標準ブラウザで Google OAuth 認証し Deep Link でコールバックする。 |
 | **Ingress** | `app` は **Cloud Run 標準 HTTPS URL（`*.run.app`）**、`api` は **`INGRESS_TRAFFIC_INTERNAL_ONLY`** | Cloud Load Balancing の固定費（月額約 $18〜）を回避しつつ、`api` を外部インターネットから完全遮断する。独自ドメインや CDN は将来任意で Firebase Hosting を前段追加可能。 |
 | **Registry** | **Artifact Registry** + Cleanup Policy | `app` / `api` の distroless イメージを保管し、Cleanup Policy で最新 2〜3 世代のみ保持して無料枠（0.5 GiB）内〜最小課金に抑える。 |
@@ -190,11 +190,11 @@ Playwright 等の E2E テストで Google 本番 OAuth を自動化せずに正�
   - **UI（`login-03`）:** `ENABLE_E2E_PASSWORD_AUTH=true` のときのみ Email / Password フォームを表示し、本番（`false`）では Google ログインボタンのみ表示する。
   - **バックエンド（Better Auth）:** Standard モードかつ `true` の場合はローカル／CI の PostgreSQL `auth` スキーマに対して `emailAndPassword` を有効化してテストユーザーを 1 件シードし、DB セッション Cookie 発行・`x-app-user-token` 署名・Connect RPC・PostgreSQL RLS まで一気通貫で検証する。
 
-### 5.3 ローカル開発（PostgreSQL 17 Compose プロファイル）
+### 5.3 ローカル開発（PostgreSQL 18 Compose プロファイル）
 
-ルートの [compose.yaml](../../../compose.yaml) において、Light 構成の Firestore Emulator 開発体験を壊さずに Standard 構成のローカル PostgreSQL 17 環境を共存させる。
+ルートの [compose.yaml](../../../compose.yaml) において、Light 構成の Firestore Emulator 開発体験を壊さずに Standard 構成のローカル PostgreSQL 18 環境を共存させる。
 
-- **Docker Compose（`standard` プロファイル）:** `docker compose --profile standard up -d` で PostgreSQL 17 コンテナを起動する（従来の `docker compose up -d` は Light 用の Firestore Emulator のみを起動）。Windows の `wslc`（`compose` サブコマンドなし）環境では、初期化 SQL ディレクトリをマウントした単発 `wslc run` コマンドを提供する。
+- **Docker Compose（`standard` プロファイル）:** `docker compose --profile standard up -d` で PostgreSQL 18 コンテナを起動する（従来の `docker compose up -d` は Light 用の Firestore Emulator のみを起動）。Windows の `wslc`（`compose` サブコマンドなし）環境では、初期化 SQL ディレクトリをマウントした単発 `wslc run` コマンドを提供する。
 - **初期化 SQL ブートストラップ:** `/docker-entrypoint-initdb.d/` により、`auth` / `app` スキーマおよび最小権限ロール（`auth_user`、`app_user` `NOSUPERUSER NOBYPASSRLS`、`migrator`）を本番 Cloud SQL と同一構造で自動作成する。
 - **本番同等のローカル検証:** ローカルで `web-app/app`（`ARCHITECTURE_VARIANT=standard`）から `web-app/api`・PostgreSQL へ接続する場合、バイパスするのは GCP メタデータサーバーからの OIDC ID Token 取得（Layer 2）のみであり、Better Auth DB セッション・`x-app-user-token` 署名検証（Layer 3）・PostgreSQL `FORCE ROW LEVEL SECURITY`（Layer 4）は本番と同一ロジックで動作する。
 
@@ -210,7 +210,7 @@ Light 構成と Standard 構成の IaC を独立管理し、CI での並行検�
   - `variables.tf` / `terraform.tfvars.example` — `project_id`, `region`（`asia-northeast1`）, `db_tier`（`db-f1-micro`）, `budget_amount_usd`（`20`）, `enable_secret_env_refs`, `auth_access_mode`（`allowlist`）, `db_deletion_protection`（本番既定 `true`、使い捨て検証時は `false`）, `psa_deletion_policy`（`terraform destroy` 時の GCP PSA ピアリング解放待ちを回避する `"ABANDON"` 設定に対応）。
   - `apis.tf` — `run`, `sqladmin`, `compute`, `servicenetworking`, `artifactregistry`, `secretmanager`, `iam`, `iamcredentials`, `cloudresourcemanager`（および任意で `billingbudgets`）の有効化。
   - `network.tf` — カスタム VPC、サブネット（`asia-northeast1`）、PSA 予約 IP 範囲、`google_service_networking_connection`（`var.psa_deletion_policy` 連携）。
-  - `cloud_sql.tf` — Cloud SQL for PostgreSQL 17 Enterprise（`db-f1-micro`, `availability_type = "ZONAL"`, `ipv4_enabled = false`, Private IP 専用, 自動バックアップ, `deletion_protection = var.db_deletion_protection`）。
+  - `cloud_sql.tf` — Cloud SQL for PostgreSQL 18 Enterprise（`db-f1-micro`, `availability_type = "ZONAL"`, `ipv4_enabled = false`, Private IP 専用, 自動バックアップ, `deletion_protection = var.db_deletion_protection`）。
   - `cloud_run.tf` — Cloud Run v2 `app` サービス（公開 HTTPS、Direct VPC Egress `PRIVATE_RANGES_ONLY`、`min_instance_count = 0`、`ENABLE_E2E_PASSWORD_AUTH = "false"` 固定）、内部専用 `api` サービス（`INGRESS_TRAFFIC_INTERNAL_ONLY`、IAM 認証必須、Direct VPC Egress `PRIVATE_RANGES_ONLY`、`min_instance_count = 0`）、および `migrate` Cloud Run v2 Job（Direct VPC Egress 経由の `sqlx` マイグレーション）。
   - `iam.tf` — 最小権限分離された SA 群（`api` のみへの `roles/run.invoker` を持つ `app-runtime`、`api-runtime`、`migrator`）および GitHub Actions 用 WIF Pool / Provider + Deployer SA。
   - `secrets.tf` — 全 7 シークレット（`better-auth-secret`, `google-client-id`, `google-client-secret`, `internal-api-jwt-secret`, `auth-database-url`, `api-database-url`, `migrator-database-url`）の 2 段階ブートストラップ（`enable_secret_env_refs = false` → バージョン登録 → `true`）。

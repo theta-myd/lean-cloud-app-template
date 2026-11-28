@@ -7,7 +7,7 @@ Terraform Infrastructure as Code for the **Standard** multi-service architecture
 ## Provisioned Resources
 
 - **VPC & Private Services Access (`network.tf`):** Custom VPC (`auto_create_subnetworks = false`), regional subnet (`10.10.0.0/24`, Private Google Access enabled), `/16` internal allocation, and PSA peering (`servicenetworking.googleapis.com`)
-- **Cloud SQL for PostgreSQL (`cloud_sql.tf`):** `POSTGRES_17` Enterprise (`db-f1-micro`, `ZONAL`, `PD_SSD` 10 GiB with autoresize, automated daily backups, `ipv4_enabled = false` — **Private IP only**) + application database (`app`)
+- **Cloud SQL for PostgreSQL (`cloud_sql.tf`):** `POSTGRES_18` Enterprise (`db-f1-micro`, `ZONAL`, `PD_SSD` 10 GiB with autoresize, automated daily backups, `ipv4_enabled = false` — **Private IP only**) + application database (`app`)
 - **Cloud Run v2 (`cloud_run.tf`):**
   - `app`: Public HTTPS (`INGRESS_TRAFFIC_ALL`), `min_instance_count = 0`, Direct VPC Egress (`PRIVATE_RANGES_ONLY`), `ARCHITECTURE_VARIANT=standard`, `ENABLE_E2E_PASSWORD_AUTH=false`
   - `api`: Internal-only (`INGRESS_TRAFFIC_INTERNAL_ONLY`), `min_instance_count = 0`, Direct VPC Egress (`PRIVATE_RANGES_ONLY`), **no `allUsers` binding** (`roles/run.invoker` granted exclusively to `app-runtime` SA)

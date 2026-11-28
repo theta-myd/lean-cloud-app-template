@@ -40,7 +40,7 @@ variable "psa_deletion_policy" {
 variable "db_version" {
   description = "Cloud SQL PostgreSQL major version."
   type        = string
-  default     = "POSTGRES_17"
+  default     = "POSTGRES_18"
 }
 
 variable "db_tier" {
