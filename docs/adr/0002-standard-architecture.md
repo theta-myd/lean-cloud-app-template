@@ -22,7 +22,7 @@ x-adr-deciders:
   - "human:theta"
 generated:
   by: "antigravity/gemini-4"
-  at: "2026-11-28T12:25:00+09:00"
+  at: "2026-11-28T13:30:00+09:00"
 stale_after: "2027-05-28T00:00:00Z"
 sources:
   - id: cloud-run-direct-vpc
@@ -97,7 +97,7 @@ sources:
 | **Target Monthly Cost** | `<$10/month` (`$0` idle, `$0–$5` light) | `~$12–$20/month` (`~$10–$12` idle, `~$12–$20` light) |
 | **Compute Topology** | 1 Cloud Run v2 service (`app`) | 2 Cloud Run v2 services (`app` public + `api` internal-only) + 1 Cloud Run v2 Job (`migrate`), all `min_instance_count = 0` |
 | **Backend Language & RPC** | TypeScript inside SvelteKit BFF (`+page.server.ts`) | Dedicated Rust backend (`web-app/api/`) with Connect RPC + Axum + `sqlx` called by SvelteKit BFF |
-| **Datastore** | Cloud Firestore Standard (Always Free daily tier) | Cloud SQL for PostgreSQL 17 Enterprise (`db-f1-micro` Zonal, **Private IP only** via PSA) |
+| **Datastore** | Cloud Firestore Standard (Always Free daily tier) | Cloud SQL for PostgreSQL 18 Enterprise (`db-f1-micro` Zonal, **Private IP only** via PSA) |
 | **Auth Sessions** | Better Auth Stateless Cookie (zero DB reads; no per-device instant revoke) | Better Auth PostgreSQL adapter (`auth` schema, DB-backed sessions + HttpOnly Cookie, instant per-device revoke) |
 | **Multi-Tenant Isolation** | Application-scoped Firestore paths | 4-layer defense in depth ending in PostgreSQL `FORCE ROW LEVEL SECURITY` (`app_user` `NOBYPASSRLS`) |
 
@@ -120,7 +120,7 @@ sources:
 | **UI** | **shadcn-svelte** (Home: `sidebar-07` with active tenant switcher / Login: `login-03`) + `mode-watcher` | Reuses the exact Light UI baseline while adding tenant context display and switching backed by `TenantService`. |
 | **Authentication** | **Better Auth (PostgreSQL adapter)** in dedicated `auth` schema (`auth_user`) + **Google OAuth 2.0 only** (`openid`, `email`, `profile`) | Stores sessions in PostgreSQL (`auth.session`) paired with encrypted/signed HttpOnly cookies, enabling immediate per-device logout and server-side session revocation.[^better-auth-postgres] |
 | **Backend API** | **Rust** (`web-app/api/`) — **Connect RPC** + **Axum** + **`sqlx`** + **non-root distroless** (Protobuf contracts in `proto/` managed by Buf) | Strongly typed HTTP/JSON & binary Protobuf RPC over standard HTTP/2, compile-time checked SQL / embedded migrations via `sqlx`, low cold-start latency, and small distroless binary footprint.[^connect-rpc] |
-| **Database** | **Cloud SQL for PostgreSQL 17** (Enterprise edition, `db-f1-micro`, Zonal, 10 GB SSD, **Private IP only** `ipv4_enabled = false`, automated backups) | Lowest-cost managed PostgreSQL with native RLS, automated backups, and zero Public IPv4 surface or idle Public IP charges.[^cloud-sql-pricing][^cloud-sql-private-ip] |
+| **Database** | **Cloud SQL for PostgreSQL 18** (Enterprise edition, `db-f1-micro`, Zonal, 10 GB SSD, **Private IP only** `ipv4_enabled = false`, automated backups) | Lowest-cost managed PostgreSQL with native RLS, automated backups, and zero Public IPv4 surface or idle Public IP charges.[^cloud-sql-pricing][^cloud-sql-private-ip] |
 | **Desktop** | **Tauri** (`desktop/` wrapping `web-app/app`) | Unchanged from ADR-0001: delegates Google OAuth to the OS browser and returns via Deep Link callback to avoid WebView `disallowed_useragent` blocks. |
 | **Ingress** | **Cloud Run default HTTPS (`*.run.app`)** for `app`; **`INGRESS_TRAFFIC_INTERNAL_ONLY`** for `api` | Avoids Cloud Load Balancing fixed fees (`~$18+/mo`) while ensuring `api` is unreachable from the public Internet.[^cloud-run-ingress] Custom domains/CDN can later use optional Firebase Hosting. |
 | **Registry** | **Artifact Registry** + Cleanup Policy | Stores `app` and `api` distroless images with automated cleanup keeping the latest 2–3 versions inside or near the 0.5 GiB Always Free tier. |
@@ -266,11 +266,11 @@ To keep Playwright E2E tests deterministic without automating Google's productio
   - **UI (`login-03`):** Displays the Email / Password form only when `ENABLE_E2E_PASSWORD_AUTH=true`; production displays only the Google Sign-In button.
   - **Backend (Better Auth):** In Standard mode with `ENABLE_E2E_PASSWORD_AUTH=true`, Better Auth enables `emailAndPassword` against the local/CI PostgreSQL `auth` schema and seeds the single test user on startup, exercising real DB-backed session cookies, `x-app-user-token` signing, Connect RPC calls, and PostgreSQL RLS end to end.
 
-### 5.3 Local Development (PostgreSQL 17 Compose Profile)
+### 5.3 Local Development (PostgreSQL 18 Compose Profile)
 
 Local development supports both Light and Standard architectures from the same root [compose.yaml](../../compose.yaml) without breaking the existing Light Firestore Emulator workflow:
 
-- **Docker Compose (`standard` profile):** Start PostgreSQL 17 locally with `docker compose --profile standard up -d` (while `docker compose up -d` continues to start only the Light Firestore Emulator). On Windows with `wslc` (which lacks a `compose` subcommand), run a standalone `wslc run` container mounting the PostgreSQL init SQL directory.
+- **Docker Compose (`standard` profile):** Start PostgreSQL 18 locally with `docker compose --profile standard up -d` (while `docker compose up -d` continues to start only the Light Firestore Emulator). On Windows with `wslc` (which lacks a `compose` subcommand), run a standalone `wslc run` container mounting the PostgreSQL init SQL directory.
 - **Bootstrap init SQL:** Mounted under `/docker-entrypoint-initdb.d/` to create the `auth` and `app` schemas along with least-privilege `auth_user`, `app_user` (`NOSUPERUSER NOBYPASSRLS`), and `migrator` roles matching Cloud SQL production.
 - **Full local fidelity:** Running `web-app/app` (`ARCHITECTURE_VARIANT=standard`) against local `web-app/api` and local PostgreSQL bypasses only the GCP metadata server OIDC ID token call (Layer 2); Better Auth DB sessions, `x-app-user-token` HMAC verification (Layer 3), and PostgreSQL `FORCE ROW LEVEL SECURITY` (Layer 4) execute identically to production.
 
@@ -286,7 +286,7 @@ To keep Light and Standard infrastructures cleanly isolated, independently valid
   - `variables.tf` / `terraform.tfvars.example` — `project_id`, `region` (`asia-northeast1`), `db_tier` (`db-f1-micro`), `budget_amount_usd` (`20`), `enable_secret_env_refs`, `auth_access_mode` (`allowlist`), `db_deletion_protection` (`true` default; set `false` for disposable test/verification runs), and `psa_deletion_policy` (supports `"ABANDON"` so `terraform destroy` does not stall on Google Cloud's asynchronous PSA peering release).
   - `apis.tf` — Enables `run`, `sqladmin`, `compute`, `servicenetworking`, `artifactregistry`, `secretmanager`, `iam`, `iamcredentials`, `cloudresourcemanager` (and optional `billingbudgets`).
   - `network.tf` — Custom VPC, Subnet (`asia-northeast1`), PSA reserved IP range, and `google_service_networking_connection` (honoring `var.psa_deletion_policy`).
-  - `cloud_sql.tf` — Cloud SQL for PostgreSQL 17 Enterprise (`db-f1-micro`, `availability_type = "ZONAL"`, `ipv4_enabled = false`, Private IP attached to custom VPC, automated backups, `deletion_protection = var.db_deletion_protection`).
+  - `cloud_sql.tf` — Cloud SQL for PostgreSQL 18 Enterprise (`db-f1-micro`, `availability_type = "ZONAL"`, `ipv4_enabled = false`, Private IP attached to custom VPC, automated backups, `deletion_protection = var.db_deletion_protection`).
   - `cloud_run.tf` — Cloud Run v2 `app` service (public HTTPS, Direct VPC Egress `PRIVATE_RANGES_ONLY`, `min_instance_count = 0`, `ENABLE_E2E_PASSWORD_AUTH = "false"`), internal `api` service (`INGRESS_TRAFFIC_INTERNAL_ONLY`, IAM auth required, Direct VPC Egress `PRIVATE_RANGES_ONLY`, `min_instance_count = 0`), and `migrate` Cloud Run v2 Job (`sqlx` migrations via Direct VPC Egress).
   - `iam.tf` — Separate least-privilege SAs (`app-runtime` with `roles/run.invoker` on `api` only, `api-runtime`, `migrator`) and optional GitHub Actions WIF Pool / Provider + Deployer SA.
   - `secrets.tf` — Two-step Secret Manager bootstrap (`enable_secret_env_refs = false` -> populate versions out-of-band -> `true`) for all 7 secrets (`better-auth-secret`, `google-client-id`, `google-client-secret`, `internal-api-jwt-secret`, `auth-database-url`, `api-database-url`, `migrator-database-url`).

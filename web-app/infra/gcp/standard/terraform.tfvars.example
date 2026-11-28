@@ -7,7 +7,7 @@ subnet_cidr         = "10.10.0.0/24"
 psa_deletion_policy = "ABANDON" # Set "" to attempt clean peering removal on destroy
 
 # Cloud SQL for PostgreSQL (Private IP only; zero Public IP)
-db_version             = "POSTGRES_17"
+db_version             = "POSTGRES_18"
 db_tier                = "db-f1-micro"
 db_availability_type   = "ZONAL" # Use "REGIONAL" for HA production
 db_disk_size_gb        = 10
