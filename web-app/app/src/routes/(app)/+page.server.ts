@@ -1,5 +1,5 @@
+import { getLightDatastoreStatus } from '#lib/server/backend.js';
 import { getServerConfig } from '#lib/server/env.js';
-import { getFirestoreStatus } from '#lib/server/firestore.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = ({ locals }) => {
@@ -8,7 +8,7 @@ export const load: PageServerLoad = ({ locals }) => {
 		architectureVariant: config.architectureVariant ?? 'light',
 		authMode: locals.authMode,
 		accessMode: config.authAccessMode,
-		firestore: getFirestoreStatus(),
+		firestore: getLightDatastoreStatus(config),
 		standardStatus: {
 			apiConfigured: config.apiConfigured,
 			authDbConfigured: config.authDatabaseConfigured

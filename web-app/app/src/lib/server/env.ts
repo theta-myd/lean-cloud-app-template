@@ -3,6 +3,8 @@ import * as env from '$app/env/private';
 export type AccessMode = 'open' | 'allowlist';
 export type ArchitectureVariant = 'light' | 'standard';
 
+export const DEFAULT_ARCHITECTURE_VARIANT: ArchitectureVariant = 'light';
+
 export interface ServerConfig {
 	architectureVariant: ArchitectureVariant;
 	appUrl: string;
@@ -46,7 +48,11 @@ function stripTrailingSlashes(url: string): string {
 export function getServerConfig(): ServerConfig {
 	const rawVariant = env.ARCHITECTURE_VARIANT?.trim().toLowerCase();
 	const architectureVariant: ArchitectureVariant =
-		rawVariant === 'standard' ? 'standard' : 'light';
+		rawVariant === 'standard'
+			? 'standard'
+			: rawVariant === 'light'
+				? 'light'
+				: DEFAULT_ARCHITECTURE_VARIANT;
 
 	const appUrl = env.PUBLIC_APP_URL?.trim() || 'http://localhost:5173';
 	const betterAuthUrl = env.BETTER_AUTH_URL?.trim() || appUrl;

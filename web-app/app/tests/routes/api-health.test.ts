@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { BackendHealthResponse } from '#lib/server/types.js';
 
 const getServerConfigMock = vi.hoisted(() =>
 	vi.fn(() => ({
@@ -8,11 +9,11 @@ const getServerConfigMock = vi.hoisted(() =>
 	}))
 );
 
-const getFirestoreStatusMock = vi.hoisted(() =>
-	vi.fn(() => ({
-		mode: 'emulator' as const,
-		projectId: 'lean-cloud-app-local',
-		emulatorHost: 'localhost:8080'
+const getBackendHealthMock = vi.hoisted(() =>
+	vi.fn<() => BackendHealthResponse>(() => ({
+		status: 'ok',
+		architecture: 'light',
+		firestore: 'emulator'
 	}))
 );
 
@@ -20,8 +21,8 @@ vi.mock('#lib/server/env.js', () => ({
 	getServerConfig: getServerConfigMock
 }));
 
-vi.mock('#lib/server/firestore.js', () => ({
-	getFirestoreStatus: getFirestoreStatusMock
+vi.mock('#lib/server/backend.js', () => ({
+	getBackendHealth: getBackendHealthMock
 }));
 
 import { GET } from '../../src/routes/api/health/+server.js';
@@ -29,14 +30,15 @@ import { GET } from '../../src/routes/api/health/+server.js';
 describe('GET /api/health', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		getServerConfigMock.mockReturnValue({
-			architectureVariant: 'light',
-			apiConfigured: false,
-			authDatabaseConfigured: false
-		});
 	});
 
 	it('returns 200 JSON with light architecture status and firestore mode', async () => {
+		getBackendHealthMock.mockReturnValueOnce({
+			status: 'ok',
+			architecture: 'light',
+			firestore: 'emulator'
+		});
+
 		const response = await GET({} as Parameters<typeof GET>[0]);
 		expect(response.status).toBe(200);
 		expect(await response.json()).toEqual({
@@ -47,10 +49,11 @@ describe('GET /api/health', () => {
 	});
 
 	it('returns 200 JSON with standard architecture status without leaking URLs or secrets', async () => {
-		getServerConfigMock.mockReturnValue({
-			architectureVariant: 'standard',
-			apiConfigured: true,
-			authDatabaseConfigured: false
+		getBackendHealthMock.mockReturnValueOnce({
+			status: 'ok',
+			architecture: 'standard',
+			api: 'configured',
+			authDb: 'unconfigured'
 		});
 
 		const response = await GET({} as Parameters<typeof GET>[0]);
@@ -61,6 +64,5 @@ describe('GET /api/health', () => {
 			api: 'configured',
 			authDb: 'unconfigured'
 		});
-		expect(getFirestoreStatusMock).not.toHaveBeenCalled();
 	});
 });

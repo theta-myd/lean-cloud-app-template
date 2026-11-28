@@ -1,6 +1,5 @@
 import { fail } from '@sveltejs/kit';
 import { getServerConfig } from '#lib/server/env.js';
-import { getFirestoreStatus } from '#lib/server/firestore.js';
 import {
 	ACTIVE_TENANT_COOKIE,
 	createUserTodo,
@@ -39,15 +38,13 @@ export const actions: Actions = {
 
 		const config = getServerConfig();
 		const preferredTenantId = cookies?.get(ACTIVE_TENANT_COOKIE) ?? null;
-		const firestoreMode =
-			config.architectureVariant === 'standard' ? 'unconfigured' : getFirestoreStatus().mode;
 		try {
 			await createUserTodo(locals.user, title, preferredTenantId, config);
 			return { action: 'create', ok: true };
 		} catch (err) {
 			return fail(503, {
 				action: 'create',
-				error: formatTodosBackendError(err, config, firestoreMode)
+				error: formatTodosBackendError(err, config)
 			});
 		}
 	},
@@ -64,15 +61,13 @@ export const actions: Actions = {
 
 		const config = getServerConfig();
 		const preferredTenantId = cookies?.get(ACTIVE_TENANT_COOKIE) ?? null;
-		const firestoreMode =
-			config.architectureVariant === 'standard' ? 'unconfigured' : getFirestoreStatus().mode;
 		try {
 			await toggleUserTodo(locals.user, id, nextCompleted, preferredTenantId, config);
 			return { action: 'toggle', ok: true };
 		} catch (err) {
 			return fail(503, {
 				action: 'toggle',
-				error: formatTodosBackendError(err, config, firestoreMode)
+				error: formatTodosBackendError(err, config)
 			});
 		}
 	},
@@ -98,15 +93,13 @@ export const actions: Actions = {
 
 		const config = getServerConfig();
 		const preferredTenantId = cookies?.get(ACTIVE_TENANT_COOKIE) ?? null;
-		const firestoreMode =
-			config.architectureVariant === 'standard' ? 'unconfigured' : getFirestoreStatus().mode;
 		try {
 			await updateUserTodoTitle(locals.user, id, title, preferredTenantId, config);
 			return { action: 'update', ok: true };
 		} catch (err) {
 			return fail(503, {
 				action: 'update',
-				error: formatTodosBackendError(err, config, firestoreMode)
+				error: formatTodosBackendError(err, config)
 			});
 		}
 	},
@@ -122,15 +115,13 @@ export const actions: Actions = {
 
 		const config = getServerConfig();
 		const preferredTenantId = cookies?.get(ACTIVE_TENANT_COOKIE) ?? null;
-		const firestoreMode =
-			config.architectureVariant === 'standard' ? 'unconfigured' : getFirestoreStatus().mode;
 		try {
 			await deleteUserTodo(locals.user, id, preferredTenantId, config);
 			return { action: 'delete', ok: true };
 		} catch (err) {
 			return fail(503, {
 				action: 'delete',
-				error: formatTodosBackendError(err, config, firestoreMode)
+				error: formatTodosBackendError(err, config)
 			});
 		}
 	},

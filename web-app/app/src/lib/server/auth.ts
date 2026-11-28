@@ -1,21 +1,21 @@
 import { betterAuth, type BetterAuthOptions } from 'better-auth';
 import { getMigrations } from 'better-auth/db/migration';
-import type { Pool } from 'pg';
+import { createAuthSessionStore } from './backend.js';
 import { assertProductionAuthSecret, getServerConfig, type ServerConfig } from './env.js';
 
 type AuthInstance = ReturnType<typeof betterAuth<BetterAuthOptions>>;
 
 let cachedAuthPromise: Promise<AuthInstance> | null = null;
 let cachedModeKey = '';
-let cachedPgPool: Pool | null = null;
+let cachedSessionStoreClose: (() => Promise<void>) | null = null;
 
 async function createAuth(config: ServerConfig): Promise<AuthInstance> {
 	assertProductionAuthSecret(config);
 
-	if (cachedPgPool) {
-		const prevPool = cachedPgPool;
-		cachedPgPool = null;
-		await prevPool.end().catch(() => {});
+	if (cachedSessionStoreClose) {
+		const closePrev = cachedSessionStoreClose;
+		cachedSessionStoreClose = null;
+		await closePrev().catch(() => {});
 	}
 
 	const socialProviders = config.googleOAuthConfigured
@@ -85,60 +85,29 @@ async function createAuth(config: ServerConfig): Promise<AuthInstance> {
 		return auth as unknown as AuthInstance;
 	}
 
-	if (config.architectureVariant === 'standard') {
-		if (!config.authDatabaseConfigured) {
-			throw new Error(
-				'AUTH_DATABASE_URL must be configured when ARCHITECTURE_VARIANT=standard.'
-			);
-		}
-
-		const { Pool: PgPool } = await import('pg');
-		const pool = new PgPool({
-			connectionString: config.authDatabaseUrl,
-			max: 5,
-			options: '-c search_path=auth'
-		});
-		pool.on('error', (err: Error & { code?: string }) => {
-			const code = typeof err.code === 'string' && err.code ? ` (${err.code})` : '';
-			console.error(`[auth] idle PostgreSQL pool client error${code}: ${err.message}`);
-		});
-		cachedPgPool = pool;
-
-		const options: BetterAuthOptions = {
-			baseURL: config.betterAuthUrl,
-			secret: config.betterAuthSecret,
-			trustedOrigins,
-			database: pool,
-			socialProviders,
-			advanced: {
-				useSecureCookies
-			},
-			session: {
-				expiresIn: 60 * 60 * 24 * 7,
-				cookieCache: {
-					enabled: false
-				}
-			}
-		};
-
-		return betterAuth(options);
-	}
+	const sessionStore = await createAuthSessionStore(config);
+	cachedSessionStoreClose = sessionStore.close ?? null;
 
 	const options: BetterAuthOptions = {
 		baseURL: config.betterAuthUrl,
 		secret: config.betterAuthSecret,
 		trustedOrigins,
+		...(sessionStore.database ? { database: sessionStore.database } : {}),
 		socialProviders,
 		advanced: {
 			useSecureCookies
 		},
 		session: {
 			expiresIn: 60 * 60 * 24 * 7,
-			cookieCache: {
-				enabled: true,
-				maxAge: 60 * 60 * 24 * 7,
-				strategy: 'jwe' as const
-			}
+			cookieCache: sessionStore.cookieCacheEnabled
+				? {
+						enabled: true,
+						maxAge: 60 * 60 * 24 * 7,
+						strategy: 'jwe' as const
+					}
+				: {
+						enabled: false
+					}
 		}
 	};
 

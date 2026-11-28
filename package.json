@@ -1,0 +1,10 @@
+{
+  "name": "lean-cloud-app-template",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "init": "bun scripts/init.ts",
+    "test:init": "bun test scripts/init.test.ts"
+  }
+}
