@@ -1,0 +1,16 @@
+version: v2
+# Connect RPC / Protobuf code generation for lean-cloud-app-template.
+#
+# - TypeScript (web-app/app): Generated with protoc-gen-es v2 into
+#   web-app/app/src/lib/gen so @connectrpc/connect v2 and @bufbuild/protobuf v2
+#   can consume the message and service descriptors directly.
+# - Rust (web-app/api): Compiled directly from proto/ at build time inside
+#   web-app/api/build.rs (via prost-build / Connect RPC codegen), so no
+#   pre-generated Rust stubs need to be emitted by Buf.
+clean: true
+plugins:
+  - local: protoc-gen-es
+    out: web-app/app/src/lib/gen
+    opt:
+      - target=ts
+      - import_extension=js

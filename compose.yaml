@@ -1,7 +1,26 @@
 # Local development services for lean-cloud-app-template
-# Start with: docker compose up -d
-# Or on Windows with wslc (no compose subcommand):
+#
+# Light architecture (default — Firestore Emulator only):
+#   docker compose up -d
+#
+# Standard architecture (includes PostgreSQL 17 with auth/app schemas & RLS roles):
+#   docker compose --profile standard up -d
+#   # Or start PostgreSQL only:
+#   docker compose --profile standard up -d postgres
+#   # Reset PostgreSQL volume (re-runs compose/postgres/init.sql):
+#   docker compose --profile standard down -v
+#
+# Windows with wslc (no compose subcommand):
+#   # Firestore Emulator (Light):
 #   wslc run -d --rm --name firestore-emulator -p 8080:8080 gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators gcloud emulators firestore start --host-port=0.0.0.0:8080
+#
+#   # PostgreSQL 17 (Standard):
+#   wslc run -d --rm --name postgres -p 5432:5432 \
+#     -e POSTGRES_DB=app \
+#     -e POSTGRES_USER=migrator \
+#     -e POSTGRES_PASSWORD=local-dev-migrator-password \
+#     -v "$PWD/compose/postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro" \
+#     postgres:17-alpine
 
 services:
   firestore-emulator:
@@ -14,3 +33,26 @@ services:
       - firestore
       - start
       - --host-port=0.0.0.0:8080
+
+  postgres:
+    image: postgres:17-alpine
+    profiles:
+      - standard
+    ports:
+      - "5432:5432"
+    environment:
+      # Local development dummy credentials only — never use in production.
+      POSTGRES_DB: app
+      POSTGRES_USER: migrator
+      POSTGRES_PASSWORD: local-dev-migrator-password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./compose/postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U migrator -d app"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-data:
