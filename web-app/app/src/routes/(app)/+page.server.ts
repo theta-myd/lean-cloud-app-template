@@ -5,8 +5,13 @@ import type { PageServerLoad } from './$types';
 export const load: PageServerLoad = ({ locals }) => {
 	const config = getServerConfig();
 	return {
+		architectureVariant: config.architectureVariant ?? 'light',
 		authMode: locals.authMode,
 		accessMode: config.authAccessMode,
-		firestore: getFirestoreStatus()
+		firestore: getFirestoreStatus(),
+		standardStatus: {
+			apiConfigured: config.apiConfigured,
+			authDbConfigured: config.authDatabaseConfigured
+		}
 	};
 };

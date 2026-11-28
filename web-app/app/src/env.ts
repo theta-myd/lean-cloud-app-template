@@ -15,5 +15,10 @@ export const variables = defineEnvVars({
 	E2E_TEST_EMAIL: { schema: optionalString },
 	E2E_TEST_PASSWORD: { schema: optionalString },
 	GOOGLE_CLOUD_PROJECT: { schema: optionalString },
-	FIRESTORE_EMULATOR_HOST: { schema: optionalString }
+	FIRESTORE_EMULATOR_HOST: { schema: optionalString },
+	ARCHITECTURE_VARIANT: { schema: optionalString },
+	AUTH_DATABASE_URL: { schema: optionalString },
+	API_BASE_URL: { schema: optionalString },
+	API_AUDIENCE: { schema: optionalString },
+	INTERNAL_API_JWT_SECRET: { schema: optionalString }
 });

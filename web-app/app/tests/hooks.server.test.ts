@@ -25,6 +25,7 @@ import { handle } from '../src/hooks.server.js';
 
 function makeConfig(overrides: Partial<ServerConfig> = {}): ServerConfig {
 	return {
+		architectureVariant: 'light',
 		appUrl: 'http://localhost:5173',
 		betterAuthUrl: 'http://localhost:5173',
 		betterAuthSecret: 'unit-test-only-secret-0000000000',
@@ -40,6 +41,13 @@ function makeConfig(overrides: Partial<ServerConfig> = {}): ServerConfig {
 		e2eTestPassword: '',
 		googleCloudProject: '',
 		firestoreEmulatorHost: '',
+		authDatabaseUrl: '',
+		authDatabaseConfigured: false,
+		apiBaseUrl: '',
+		apiConfigured: false,
+		apiAudience: '',
+		internalApiJwtSecret: 'unit-test-only-internal-jwt-secret-32b',
+		internalApiJwtSecretConfigured: true,
 		...overrides
 	};
 }
@@ -160,6 +168,29 @@ describe('hooks.server handle', () => {
 		expect(response.headers.get('x-content-type-options')).toBe('nosniff');
 		expect(response.headers.get('x-frame-options')).toBe('DENY');
 		expect(response.headers.get('content-security-policy')).toContain("frame-ancestors 'none'");
+	});
+
+	it('sets authMode to postgres-db in Standard mode and e2e-memory-sqlite when E2E auth is enabled', async () => {
+		const user = { id: 'u2', email: 'allowed@example.com', emailVerified: true, name: 'Allowed' };
+		getSessionMock.mockResolvedValue({ user, session: { id: 's2' } });
+
+		getServerConfigMock.mockReturnValue(makeConfig({ architectureVariant: 'standard' }));
+		const standardEvent = makeEvent('/');
+		await handle({
+			event: standardEvent as unknown as Parameters<Handle>[0]['event'],
+			resolve
+		});
+		expect(standardEvent.locals.authMode).toBe('postgres-db');
+
+		getServerConfigMock.mockReturnValue(
+			makeConfig({ architectureVariant: 'standard', enableE2ePasswordAuth: true })
+		);
+		const e2eEvent = makeEvent('/');
+		await handle({
+			event: e2eEvent as unknown as Parameters<Handle>[0]['event'],
+			resolve
+		});
+		expect(e2eEvent.locals.authMode).toBe('e2e-memory-sqlite');
 	});
 
 	it('applies security headers and no-store cache control on /api/* responses', async () => {

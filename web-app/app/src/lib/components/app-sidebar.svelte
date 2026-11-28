@@ -13,7 +13,7 @@
 	import ShieldCheckIcon from '@lucide/svelte/icons/shield-check';
 	import UserCheckIcon from '@lucide/svelte/icons/user-check';
 
-	const navData = {
+	const lightNavData = {
 		navMain: [
 			{
 				title: 'Workspace',
@@ -49,6 +49,43 @@
 			{ name: 'Allowlist & OAuth', url: '#auth', icon: ShieldCheckIcon }
 		]
 	};
+
+	const standardNavData = {
+		navMain: [
+			{
+				title: 'Workspace',
+				url: '/',
+				icon: LayoutDashboardIcon,
+				isActive: true,
+				items: [
+					{ title: 'Overview', url: '/', icon: HomeIcon },
+					{ title: 'TODO Sample', url: '/todos', icon: ListTodoIcon },
+					{ title: 'Health Check', url: '/api/health', icon: ActivityIcon }
+				]
+			},
+			{
+				title: 'Architecture',
+				url: '#architecture',
+				icon: BookOpenIcon,
+				items: [
+					{ title: 'Cloud Run (BFF + API)', url: '#compute', icon: ServerIcon },
+					{ title: 'PostgreSQL + RLS', url: '#datastore', icon: DatabaseIcon },
+					{ title: 'Better Auth (DB)', url: '#auth', icon: KeyRoundIcon }
+				]
+			},
+			{
+				title: 'Settings',
+				url: '#settings',
+				icon: Settings2Icon,
+				items: [{ title: 'Access Control', url: '#auth', icon: UserCheckIcon }]
+			}
+		],
+		projects: [
+			{ name: 'Connect RPC API', url: '#compute', icon: CloudIcon },
+			{ name: 'PostgreSQL RLS', url: '#datastore', icon: DatabaseIcon },
+			{ name: 'DB Sessions & OAuth', url: '#auth', icon: ShieldCheckIcon }
+		]
+	};
 </script>
 
 <script lang="ts">
@@ -64,14 +101,24 @@
 			email: string;
 			image?: string | null;
 		};
+		architectureVariant?: 'light' | 'standard';
+		activeTenant?: {
+			name: string;
+			slug: string;
+			isPersonal: boolean;
+		} | null;
 	}
 
 	let {
 		user,
+		architectureVariant = 'light',
+		activeTenant = null,
 		ref = $bindable(null),
 		collapsible = 'icon',
 		...restProps
 	}: Props = $props();
+
+	const navData = $derived(architectureVariant === 'standard' ? standardNavData : lightNavData);
 </script>
 
 <Sidebar.Root bind:ref {collapsible} {...restProps}>
@@ -82,7 +129,9 @@
 					{#snippet child({ props })}
 						<a href="/" {...props}>
 							<GalleryVerticalEndIcon class="size-5!" />
-							<span class="text-base font-semibold">Lean Cloud App</span>
+							<span class="truncate text-base font-semibold">
+								{activeTenant ? activeTenant.name : 'Lean Cloud App'}
+							</span>
 						</a>
 					{/snippet}
 				</Sidebar.MenuButton>
