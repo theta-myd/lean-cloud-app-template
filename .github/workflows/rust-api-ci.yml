@@ -1,0 +1,119 @@
+name: Rust API CI
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "web-app/api/**"
+      - "proto/**"
+      - "buf.yaml"
+      - "compose/postgres/init.sql"
+      - ".github/workflows/rust-api-ci.yml"
+  pull_request:
+    paths:
+      - "web-app/api/**"
+      - "proto/**"
+      - "buf.yaml"
+      - "compose/postgres/init.sql"
+      - ".github/workflows/rust-api-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rust-api-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  proto-lint:
+    name: Proto Lint (Buf)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Lint Protobuf Contracts
+        run: bunx @bufbuild/buf lint
+
+  lint-and-test:
+    name: Format, Clippy, Migrate & RLS Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          # Local CI dummy credentials only — never use in production.
+          POSTGRES_DB: app
+          POSTGRES_USER: migrator
+          POSTGRES_PASSWORD: local-dev-migrator-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U migrator -d app"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Check Rust API Scaffold
+        id: check-api
+        run: |
+          if [ -f "web-app/api/Cargo.toml" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::web-app/api/Cargo.toml not found yet; skipping Cargo build/test steps."
+          fi
+
+      - name: Install Protobuf Compiler & PostgreSQL Client
+        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler postgresql-client
+
+      - name: Initialize PostgreSQL Schemas and Least-Privilege Roles
+        env:
+          PGPASSWORD: local-dev-migrator-password
+        run: |
+          psql -h 127.0.0.1 -p 5432 -U migrator -d app -v ON_ERROR_STOP=1 -f compose/postgres/init.sql
+
+      - name: Install Rust Stable Toolchain
+        if: steps.check-api.outputs.exists == 'true'
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache Cargo Dependencies
+        if: steps.check-api.outputs.exists == 'true'
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "web-app/api -> target"
+
+      - name: Check Formatting (cargo fmt)
+        if: steps.check-api.outputs.exists == 'true'
+        working-directory: web-app/api
+        run: cargo fmt --check
+
+      - name: Lint with Clippy
+        if: steps.check-api.outputs.exists == 'true'
+        working-directory: web-app/api
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Run Database Migrations (--migrate-only)
+        if: steps.check-api.outputs.exists == 'true'
+        working-directory: web-app/api
+        env:
+          DATABASE_URL: postgres://migrator:local-dev-migrator-password@127.0.0.1:5432/app
+        run: cargo run -- --migrate-only
+
+      - name: Run Unit & PostgreSQL RLS Isolation Tests
+        if: steps.check-api.outputs.exists == 'true'
+        working-directory: web-app/api
+        env:
+          DATABASE_URL: postgres://app_user:local-dev-app-password@127.0.0.1:5432/app
+          MIGRATOR_DATABASE_URL: postgres://migrator:local-dev-migrator-password@127.0.0.1:5432/app
+          INTERNAL_API_JWT_SECRET: ci-test-internal-jwt-secret-minimum-32-bytes
+        run: cargo test --all-targets
