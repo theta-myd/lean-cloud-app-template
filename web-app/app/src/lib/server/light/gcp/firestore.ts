@@ -1,22 +1,11 @@
 import { Firestore } from '@google-cloud/firestore';
-import { getServerConfig } from './env.js';
+import { getServerConfig, type ServerConfig } from '../../env.js';
+import { isValidEntityId, type LightDatastoreStatus, type TodoItem } from '../../types.js';
 
 let firestoreInstance: Firestore | null = null;
 let cachedEmulatorHost: string | null = null;
 
-export interface FirestoreStatus {
-	mode: 'emulator' | 'cloud' | 'unconfigured';
-	projectId: string;
-	emulatorHost: string | null;
-}
-
-export interface TodoItem {
-	id: string;
-	title: string;
-	completed: boolean;
-	createdAt: string;
-	updatedAt: string;
-}
+export type FirestoreStatus = LightDatastoreStatus;
 
 export class FirestoreUnavailableError extends Error {
 	constructor(message: string) {
@@ -25,8 +14,7 @@ export class FirestoreUnavailableError extends Error {
 	}
 }
 
-export function getFirestoreStatus(): FirestoreStatus {
-	const config = getServerConfig();
+export function getFirestoreStatus(config: ServerConfig = getServerConfig()): FirestoreStatus {
 	if (config.firestoreEmulatorHost) {
 		return {
 			mode: 'emulator',
@@ -53,8 +41,8 @@ export function getFirestoreStatus(): FirestoreStatus {
 	};
 }
 
-export function getFirestore(): Firestore {
-	const status = getFirestoreStatus();
+export function getFirestore(config: ServerConfig = getServerConfig()): Firestore {
+	const status = getFirestoreStatus(config);
 	if (status.mode === 'unconfigured') {
 		throw new FirestoreUnavailableError(
 			'Cloud Firestore is not configured. Set FIRESTORE_EMULATOR_HOST or GOOGLE_CLOUD_PROJECT in .env.'
@@ -75,13 +63,8 @@ export function getFirestore(): Firestore {
 	return firestoreInstance;
 }
 
-const DOC_ID_PATTERN = /^[A-Za-z0-9_-]{1,128}$/;
-
 export function isValidFirestoreDocId(id: string): boolean {
-	if (!DOC_ID_PATTERN.test(id)) {
-		return false;
-	}
-	return !(id.startsWith('__') && id.endsWith('__'));
+	return isValidEntityId(id);
 }
 
 function assertValidUserId(userId: string): string {
@@ -98,12 +81,15 @@ function assertValidUserId(userId: string): string {
 	return trimmed;
 }
 
-function todosCollection(userId: string) {
-	return getFirestore().collection('users').doc(assertValidUserId(userId)).collection('todos');
+function todosCollection(userId: string, config: ServerConfig = getServerConfig()) {
+	return getFirestore(config).collection('users').doc(assertValidUserId(userId)).collection('todos');
 }
 
-export async function listTodos(userId: string): Promise<TodoItem[]> {
-	const snapshot = await todosCollection(userId).orderBy('createdAt', 'desc').limit(50).get();
+export async function listTodos(
+	userId: string,
+	config: ServerConfig = getServerConfig()
+): Promise<TodoItem[]> {
+	const snapshot = await todosCollection(userId, config).orderBy('createdAt', 'desc').limit(50).get();
 	return snapshot.docs.map((doc) => {
 		const data = doc.data();
 		return {
@@ -116,9 +102,13 @@ export async function listTodos(userId: string): Promise<TodoItem[]> {
 	});
 }
 
-export async function createTodo(userId: string, title: string): Promise<TodoItem> {
+export async function createTodo(
+	userId: string,
+	title: string,
+	config: ServerConfig = getServerConfig()
+): Promise<TodoItem> {
 	const now = new Date().toISOString();
-	const ref = todosCollection(userId).doc();
+	const ref = todosCollection(userId, config).doc();
 	const item: TodoItem = {
 		id: ref.id,
 		title,
@@ -130,29 +120,43 @@ export async function createTodo(userId: string, title: string): Promise<TodoIte
 	return item;
 }
 
-export async function toggleTodo(userId: string, id: string, completed: boolean): Promise<void> {
+export async function toggleTodo(
+	userId: string,
+	id: string,
+	completed: boolean,
+	config: ServerConfig = getServerConfig()
+): Promise<void> {
 	if (!isValidFirestoreDocId(id)) {
 		throw new Error('Invalid task id.');
 	}
-	await todosCollection(userId).doc(id).update({
+	await todosCollection(userId, config).doc(id).update({
 		completed,
 		updatedAt: new Date().toISOString()
 	});
 }
 
-export async function updateTodoTitle(userId: string, id: string, title: string): Promise<void> {
+export async function updateTodoTitle(
+	userId: string,
+	id: string,
+	title: string,
+	config: ServerConfig = getServerConfig()
+): Promise<void> {
 	if (!isValidFirestoreDocId(id)) {
 		throw new Error('Invalid task id.');
 	}
-	await todosCollection(userId).doc(id).update({
+	await todosCollection(userId, config).doc(id).update({
 		title,
 		updatedAt: new Date().toISOString()
 	});
 }
 
-export async function deleteTodo(userId: string, id: string): Promise<void> {
+export async function deleteTodo(
+	userId: string,
+	id: string,
+	config: ServerConfig = getServerConfig()
+): Promise<void> {
 	if (!isValidFirestoreDocId(id)) {
 		throw new Error('Invalid task id.');
 	}
-	await todosCollection(userId).doc(id).delete();
+	await todosCollection(userId, config).doc(id).delete();
 }

@@ -10,6 +10,10 @@ const { getServerConfigMock, getSessionMock, svelteKitHandlerMock } = vi.hoisted
 
 vi.mock('$app/env', () => ({ building: false }));
 vi.mock('#lib/server/env.js', () => ({ getServerConfig: getServerConfigMock }));
+vi.mock('#lib/server/backend.js', () => ({
+	getBackendAuthMode: (config: ServerConfig) =>
+		config.architectureVariant === 'standard' ? 'postgres-db' : 'stateless'
+}));
 vi.mock('#lib/server/auth.js', () => ({
 	getAuth: vi.fn(async () => ({
 		api: {

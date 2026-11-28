@@ -23,7 +23,11 @@ const envMock = vi.hoisted(() => ({
 
 vi.mock('$app/env/private', () => envMock);
 
-import { assertProductionAuthSecret, getServerConfig } from '#lib/server/env.js';
+import {
+	DEFAULT_ARCHITECTURE_VARIANT,
+	assertProductionAuthSecret,
+	getServerConfig
+} from '#lib/server/env.js';
 
 function resetEnv(overrides: Partial<typeof envMock> = {}): void {
 	for (const key of Object.keys(envMock) as Array<keyof typeof envMock>) {
@@ -39,7 +43,7 @@ describe('getServerConfig', () => {
 
 	it('returns safe defaults when env vars are unset', () => {
 		const config = getServerConfig();
-		expect(config.architectureVariant).toBe('light');
+		expect(config.architectureVariant).toBe(DEFAULT_ARCHITECTURE_VARIANT);
 		expect(config.appUrl).toBe('http://localhost:5173');
 		expect(config.betterAuthUrl).toBe('http://localhost:5173');
 		expect(config.authAccessMode).toBe('allowlist');
@@ -113,7 +117,7 @@ describe('getServerConfig', () => {
 		expect(localStandard.apiAudience).toBe('');
 
 		resetEnv({ ARCHITECTURE_VARIANT: 'invalid-variant' });
-		expect(getServerConfig().architectureVariant).toBe('light');
+		expect(getServerConfig().architectureVariant).toBe(DEFAULT_ARCHITECTURE_VARIANT);
 	});
 
 	it('enforces BETTER_AUTH_SECRET in production unless E2E auth is enabled', () => {
@@ -130,7 +134,7 @@ describe('getServerConfig', () => {
 		resetEnv({ ENABLE_E2E_PASSWORD_AUTH: 'true' });
 		expect(() => assertProductionAuthSecret(getServerConfig(), 'production')).not.toThrow();
 
-		resetEnv({ BETTER_AUTH_SECRET: 'a'.repeat(32) });
+		resetEnv({ ARCHITECTURE_VARIANT: 'light', BETTER_AUTH_SECRET: 'a'.repeat(32) });
 		const validConfig = getServerConfig();
 		expect(validConfig.betterAuthSecretConfigured).toBe(true);
 		expect(() => assertProductionAuthSecret(validConfig, 'production')).not.toThrow();

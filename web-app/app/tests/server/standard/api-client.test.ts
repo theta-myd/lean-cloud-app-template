@@ -1,21 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ServerConfig } from '#lib/server/env.js';
-import { verifyInternalUserToken } from '#lib/server/internal-jwt.js';
+import { verifyInternalUserToken } from '#lib/server/standard/internal-jwt.js';
 
 const getGcpIdTokenMock = vi.hoisted(() => vi.fn<() => Promise<string | null>>());
 
-vi.mock('#lib/server/gcp-id-token.js', () => ({
+vi.mock('#lib/server/standard/gcp-id-token.js', () => ({
 	getGcpIdToken: getGcpIdTokenMock
 }));
 
-import { createApiAuthInterceptor } from '#lib/server/api-client.js';
+import { createApiAuthInterceptor } from '#lib/server/standard/api-client.js';
 
 function makeStandardConfig(overrides: Partial<ServerConfig> = {}): ServerConfig {
 	return {
 		architectureVariant: 'standard',
 		appUrl: 'http://localhost:5173',
 		betterAuthUrl: 'http://localhost:5173',
-		betterAuthSecret: 'unit-test-only-better-auth-secret-32b',
+		betterAuthSecret: 'a'.repeat(32),
 		betterAuthSecretConfigured: true,
 		googleClientId: '',
 		googleClientSecret: '',
@@ -33,7 +33,7 @@ function makeStandardConfig(overrides: Partial<ServerConfig> = {}): ServerConfig
 		apiBaseUrl: 'https://api.example.run.app',
 		apiConfigured: true,
 		apiAudience: 'https://api.example.run.app',
-		internalApiJwtSecret: 'unit-test-only-internal-jwt-secret-32b',
+		internalApiJwtSecret: 'b'.repeat(32),
 		internalApiJwtSecretConfigured: true,
 		...overrides
 	};

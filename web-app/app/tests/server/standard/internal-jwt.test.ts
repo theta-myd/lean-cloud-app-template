@@ -4,9 +4,9 @@ import {
 	INTERNAL_JWT_ISSUER,
 	signInternalUserToken,
 	verifyInternalUserToken
-} from '#lib/server/internal-jwt.js';
+} from '#lib/server/standard/internal-jwt.js';
 
-const TEST_SECRET = 'unit-test-only-internal-api-jwt-secret-32b';
+const TEST_SECRET = 't'.repeat(32);
 
 describe('internal-jwt', () => {
 	it('signs and verifies an HS256 JWT with required and optional claims', () => {
@@ -73,7 +73,7 @@ describe('internal-jwt', () => {
 		});
 
 		expect(() =>
-			verifyInternalUserToken(token, 'wrong-secret-value-0000000000000000', { nowSeconds: now })
+			verifyInternalUserToken(token, 'w'.repeat(32), { nowSeconds: now })
 		).toThrow('Invalid internal JWT signature.');
 
 		const [header, payload, signature] = token.split('.');

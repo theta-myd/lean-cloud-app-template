@@ -3,7 +3,7 @@ import {
 	clearGcpIdTokenCache,
 	getGcpIdToken,
 	shouldFetchGcpIdToken
-} from '#lib/server/gcp-id-token.js';
+} from '#lib/server/standard/gcp-id-token.js';
 
 function makeFakeJwt(expSeconds: number): string {
 	const header = Buffer.from(JSON.stringify({ alg: 'RS256', typ: 'JWT' })).toString('base64url');

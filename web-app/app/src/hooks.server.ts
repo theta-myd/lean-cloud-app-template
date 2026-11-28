@@ -4,6 +4,7 @@ import type { Handle } from '@sveltejs/kit/hooks';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { isEmailAllowed } from '#lib/server/allowlist.js';
 import { getAuth } from '#lib/server/auth.js';
+import { getBackendAuthMode } from '#lib/server/backend.js';
 import { getServerConfig } from '#lib/server/env.js';
 import { applySecurityHeaders } from '#lib/server/security-headers.js';
 
@@ -35,9 +36,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 	event.locals.session = sessionResult?.session ?? null;
 	event.locals.authMode = config.enableE2ePasswordAuth
 		? 'e2e-memory-sqlite'
-		: config.architectureVariant === 'standard'
-			? 'postgres-db'
-			: 'stateless';
+		: getBackendAuthMode(config);
 	event.locals.isAuthorized = sessionResult?.user
 		? isEmailAllowed(sessionResult.user.email, sessionResult.user.emailVerified, config)
 		: false;

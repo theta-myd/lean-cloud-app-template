@@ -9,14 +9,14 @@ const getServerConfigMock = vi.hoisted(() =>
 	}))
 );
 
-const resolveActiveTenantContextMock = vi.hoisted(() => vi.fn());
+const resolveOptionalActiveTenantMock = vi.hoisted(() => vi.fn());
 
 vi.mock('#lib/server/env.js', () => ({
 	getServerConfig: getServerConfigMock
 }));
 
-vi.mock('#lib/server/api-client.js', () => ({
-	resolveActiveTenantContext: resolveActiveTenantContextMock
+vi.mock('#lib/server/backend.js', () => ({
+	resolveOptionalActiveTenant: resolveOptionalActiveTenantMock
 }));
 
 import { load as layoutLoad } from '../../src/routes/(app)/+layout.server.js';
@@ -32,6 +32,7 @@ describe('route server load guards', () => {
 			enableE2ePasswordAuth: true,
 			googleOAuthConfigured: false
 		});
+		resolveOptionalActiveTenantMock.mockResolvedValue(null);
 	});
 
 	it('login load exposes only E2E and Google OAuth flags', () => {
@@ -54,10 +55,9 @@ describe('route server load guards', () => {
 			architectureVariant: 'light',
 			activeTenant: null
 		});
-		expect(resolveActiveTenantContextMock).not.toHaveBeenCalled();
 	});
 
-	it('(app) layout load resolves active tenant in Standard mode when API is configured', async () => {
+	it('(app) layout load resolves active tenant in Standard mode via backend facade', async () => {
 		getServerConfigMock.mockReturnValue({
 			architectureVariant: 'standard',
 			apiConfigured: true,
@@ -72,10 +72,7 @@ describe('route server load guards', () => {
 			isPersonal: true,
 			createdAt: '2026-01-01T00:00:00.000Z'
 		};
-		resolveActiveTenantContextMock.mockResolvedValueOnce({
-			activeTenant: tenant,
-			tenants: [tenant]
-		});
+		resolveOptionalActiveTenantMock.mockResolvedValueOnce(tenant);
 
 		const user = { id: 'u1', email: 'dev@example.com', name: 'Dev' };
 		const cookies = { get: vi.fn(() => 't-1') };

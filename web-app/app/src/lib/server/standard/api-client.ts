@@ -3,24 +3,12 @@ import { Code, ConnectError, createClient, type Interceptor } from '@connectrpc/
 import { createConnectTransport } from '@connectrpc/connect-web';
 import { TenantRole, TenantService, type Tenant } from '#lib/gen/tenant/v1/tenant_pb.js';
 import { TodoService, type Todo } from '#lib/gen/todo/v1/todo_pb.js';
-import { getServerConfig, type ServerConfig } from './env.js';
+import { getServerConfig, type ServerConfig } from '../env.js';
+import type { ActiveTenantContext, ApiCaller, TenantSummary } from '../types.js';
 import { getGcpIdToken } from './gcp-id-token.js';
 import { signInternalUserToken } from './internal-jwt.js';
 
-export interface ApiCaller {
-	id: string;
-	email: string;
-	name?: string | null;
-}
-
-export interface TenantSummary {
-	id: string;
-	name: string;
-	slug: string;
-	role: 'owner' | 'admin' | 'member' | 'unspecified';
-	isPersonal: boolean;
-	createdAt: string;
-}
+export type { ActiveTenantContext, ApiCaller, TenantSummary } from '../types.js';
 
 export interface StandardTodoItem {
 	id: string;
@@ -30,11 +18,6 @@ export interface StandardTodoItem {
 	completed: boolean;
 	createdAt: string;
 	updatedAt: string;
-}
-
-export interface ActiveTenantContext {
-	activeTenant: TenantSummary;
-	tenants: TenantSummary[];
 }
 
 export class ApiUnavailableError extends Error {
