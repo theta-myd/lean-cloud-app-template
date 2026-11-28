@@ -108,4 +108,6 @@ resource "google_project_iam_member" "deployer_run_developer" {
   project = var.project_id
   role    = "roles/run.developer"
   member  = "serviceAccount:${google_service_account.github_deployer[0].email}"
+
+  depends_on = [google_project_service.enabled]
 }

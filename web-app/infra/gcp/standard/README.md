@@ -6,7 +6,7 @@ Terraform Infrastructure as Code for the **Standard** multi-service architecture
 
 ## Provisioned Resources
 
-- **VPC & Private Services Access (`network.tf`):** Custom VPC (`auto_create_subnetworks = false`), regional subnet (`10.10.0.0/24`, Private Google Access enabled), `/16` internal allocation, and PSA peering (`servicenetworking.googleapis.com`)
+- **VPC, Private Services Access & Private DNS (`network.tf`):** Custom VPC (`auto_create_subnetworks = false`), regional subnet (`10.10.0.0/24`, Private Google Access enabled), `/16` internal allocation, PSA peering (`servicenetworking.googleapis.com`), and a private Cloud DNS zone (`run.app.` → `private.googleapis.com` `199.36.153.8/30`) so Direct VPC Egress (`PRIVATE_RANGES_ONLY`) reaches the internal-only Rust API without Cloud NAT or an Internal Load Balancer
 - **Cloud SQL for PostgreSQL (`cloud_sql.tf`):** `POSTGRES_18` Enterprise (`db-f1-micro`, `ZONAL`, `PD_SSD` 10 GiB with autoresize, automated daily backups, `ipv4_enabled = false` — **Private IP only**) + application database (`app`)
 - **Cloud Run v2 (`cloud_run.tf`):**
   - `app`: Public HTTPS (`INGRESS_TRAFFIC_ALL`), `min_instance_count = 0`, Direct VPC Egress (`PRIVATE_RANGES_ONLY`), `ARCHITECTURE_VARIANT=standard`, `ENABLE_E2E_PASSWORD_AUTH=false`
@@ -64,9 +64,11 @@ printf '%s' 'REPLACE_WITH_GOOGLE_CLIENT_ID'      | gcloud secrets versions add l
 printf '%s' 'REPLACE_WITH_GOOGLE_CLIENT_SECRET'  | gcloud secrets versions add lean-cloud-app-google-client-secret --data-file=-
 printf '%s' 'REPLACE_WITH_INTERNAL_JWT_SECRET'   | gcloud secrets versions add lean-cloud-app-internal-api-jwt-secret --data-file=-
 
-printf '%s' "postgres://auth_user:REPLACE_WITH_AUTH_PASSWORD@${SQL_PRIVATE_IP}:5432/app?sslmode=require"         | gcloud secrets versions add lean-cloud-app-auth-database-url --data-file=-
-printf '%s' "postgres://api_user:REPLACE_WITH_API_PASSWORD@${SQL_PRIVATE_IP}:5432/app?sslmode=require"           | gcloud secrets versions add lean-cloud-app-api-database-url --data-file=-
-printf '%s' "postgres://migrator_user:REPLACE_WITH_MIGRATOR_PASSWORD@${SQL_PRIVATE_IP}:5432/app?sslmode=require" | gcloud secrets versions add lean-cloud-app-migrator-database-url --data-file=-
+# Note: node-postgres (pg v8+) requires `uselibpqcompat=true&sslmode=require` so TLS encrypts
+# against Cloud SQL's per-instance CA without failing public-CA verification.
+printf '%s' "postgres://auth_user:REPLACE_WITH_AUTH_PASSWORD@${SQL_PRIVATE_IP}:5432/app?uselibpqcompat=true&sslmode=require" | gcloud secrets versions add lean-cloud-app-auth-database-url --data-file=-
+printf '%s' "postgres://api_user:REPLACE_WITH_API_PASSWORD@${SQL_PRIVATE_IP}:5432/app?sslmode=require"                        | gcloud secrets versions add lean-cloud-app-api-database-url --data-file=-
+printf '%s' "postgres://migrator_user:REPLACE_WITH_MIGRATOR_PASSWORD@${SQL_PRIVATE_IP}:5432/app?sslmode=require"              | gcloud secrets versions add lean-cloud-app-migrator-database-url --data-file=-
 ```
 
 ### 3. Enable Secret Manager mounts & app URL on Cloud Run
@@ -108,3 +110,5 @@ terraform init -backend-config="bucket=YOUR_TFSTATE_BUCKET"
 
 - **`psa_deletion_policy` (default `"ABANDON"`):** Google Cloud's Service Networking peering often remains marked "in use" for several minutes after Cloud SQL deletion, causing `terraform destroy` to time out. Leaving `psa_deletion_policy = "ABANDON"` detaches the peering cleanly from Terraform state in disposable environments. Set `psa_deletion_policy = ""` when you want Terraform to attempt full peering removal.
 - **`db_deletion_protection` (default `false`):** Defaults to `false` for disposable template verification. Set `db_deletion_protection = true` for production environments, and reset it to `false` via `terraform apply` before destroying.
+- **Direct VPC Egress subnet GC (`serverless-ipv4-cloudrun-*`):** After deleting Cloud Run services attached via Direct VPC Egress, Google Cloud may keep the internal `serverless-ipv4-cloudrun-*` address reservation for up to ~20 minutes (at `$0` cost). If `google_compute_subnetwork.subnet` reports `resourceInUseByAnotherResource`, wait for GC to release the address and re-run `terraform destroy` to remove the subnet and VPC cleanly.
+- **Workspace ADC restriction (`admin_policy_enforced`):** If your Google Workspace organization blocks `gcloud auth application-default login`, you can run Terraform with a short-lived token from `gcloud auth login`: `GOOGLE_OAUTH_ACCESS_TOKEN="$(gcloud auth print-access-token)" USER_PROJECT_OVERRIDE=true GOOGLE_BILLING_PROJECT=<project_id> terraform apply`.
