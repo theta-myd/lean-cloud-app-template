@@ -14,4 +14,5 @@ license: MIT
 * [Directory Update Log](./log.md) - Chronological history of ADR additions and updates.
 * [ADR Authoring Guide](./README.md) - Human-facing guide and template for this repository's OKF v0.3 ADR customization.
 * [ADR-0001 (Japanese Mirror)](../jp/adr/0001-light-architecture.md) - Synchronized Japanese translation outside the OKF bundle.
-* [Light Architecture Diagram (SVG)](../architecture/light-architecture.drawio.svg) - Editable diagram source in [light-architecture.drawio](../architecture/light-architecture.drawio).
+* [Light Architecture Diagram (GCP / SVG)](../architecture/gcp/light-architecture.drawio.svg) - Editable diagram source in [gcp/light-architecture.drawio](../architecture/gcp/light-architecture.drawio).
+* [Standard Architecture Diagram (GCP / SVG)](../architecture/gcp/standard-architecture.drawio.svg) - Editable diagram source in [gcp/standard-architecture.drawio](../architecture/gcp/standard-architecture.drawio).

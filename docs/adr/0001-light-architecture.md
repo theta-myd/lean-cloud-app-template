@@ -18,7 +18,7 @@ x-adr-deciders:
   - "human:theta"
 generated:
   by: "antigravity/gemini-4"
-  at: "2026-11-27T18:30:00+09:00"
+  at: "2026-11-28T12:18:00+09:00"
 verified:
   - by: "human:theta"
     at: "2026-11-27T13:15:00+09:00"
@@ -46,7 +46,7 @@ sources:
 
 # ADR-0001: Light Architecture Design (GCP / <$10/month / Scale-to-Zero)
 
-- **Diagram:** [light-architecture.drawio.svg](../architecture/light-architecture.drawio.svg) (editable source: [light-architecture.drawio](../architecture/light-architecture.drawio))
+- **Diagram:** [gcp/light-architecture.drawio.svg](../architecture/gcp/light-architecture.drawio.svg) (editable source: [gcp/light-architecture.drawio](../architecture/gcp/light-architecture.drawio))
 - **Implementation:** [web-app/infra/gcp/](../../web-app/infra/gcp/) | [compose.yaml](../../compose.yaml) | [web-app/app/.env.example](../../web-app/app/.env.example)
 
 ---

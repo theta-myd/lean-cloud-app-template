@@ -20,7 +20,7 @@ A **<$10/month**, **scale-to-zero (`min-instance = 0`)** Cloud Run web & desktop
 
 ### 1. Light Architecture (Current Focus)
 
-![Light Architecture](./docs/architecture/light-architecture.drawio.svg)
+![Light Architecture](./docs/architecture/gcp/light-architecture.drawio.svg)
 
 - **Compute (`web-app/app`):** Cloud Run v2 single container (`asia-northeast1`, `min_instance_count = 0`, 1 vCPU / 512 MiB, `*.run.app`) running Svelte 5 + SvelteKit 3 (`adapter-bun`) on a hardened **distroless** image
 - **UI:** `shadcn-svelte` (Home: `sidebar-07`, Login: `login-03`) with `mode-watcher` (`light` / `dark` / `system`) + bundled `shadcn-svelte` and official Svelte skills under `web-app/app/.agents/skills/`
@@ -28,14 +28,17 @@ A **<$10/month**, **scale-to-zero (`min-instance = 0`)** Cloud Run web & desktop
 - **Datastore:** **Cloud Firestore (Standard Edition, Native Mode)** within the Always Free daily tier, accessed server-side only via the Cloud Run runtime service account (local dev uses the official Firestore Emulator via `compose.yaml`)
 - **Desktop (`desktop`):** Tauri wrapper around `web-app/app` (delegates Google OAuth to the OS browser and returns via Deep Link)
 - **Infra & Guardrails (`web-app/infra/gcp`):** Terraform for Cloud Run v2, Firestore, Artifact Registry (cleanup policy), Secret Manager, Workload Identity Federation (OIDC), Cloud Logging, and Cloud Billing Budget alerts (`$5` / `$8` / `$10`)
-- **Design Docs:** [light-architecture.drawio](./docs/architecture/light-architecture.drawio) | [ADRs (OKF v0.3)](./docs/adr/index.md) | [ADR-0001](./docs/adr/0001-light-architecture.md)
+- **Design Docs:** [gcp/light-architecture.drawio](./docs/architecture/gcp/light-architecture.drawio) | [Architecture Diagrams](./docs/architecture/README.md) | [ADRs (OKF v0.3)](./docs/adr/index.md) | [ADR-0001](./docs/adr/0001-light-architecture.md)
 
 ### 2. Standard Architecture (Planned Roadmap)
 
+![Standard Architecture](./docs/architecture/gcp/standard-architecture.drawio.svg)
+
 Tracked in [Issue #2](https://github.com/theta-myd/lean-cloud-app-template/issues/2) for workloads requiring a dedicated backend API and relational database with Row-Level Security (RLS):
 
-- **Backend API (`web-app/api`):** Rust (`Connect RPC + Axum + sqlx + RLS`)
-- **Database:** PostgreSQL (note: Cloud SQL has no native scale-to-zero and typically costs ~$10–$15+/month minimum, which is why **Light** is prioritized first)
+- **Backend API (`web-app/api`):** Rust (`Connect RPC + Axum + sqlx + RLS`) on internal-only Cloud Run v2 (`INGRESS_TRAFFIC_INTERNAL_ONLY` + Cloud Run IAM)
+- **Database:** Cloud SQL for PostgreSQL (Private IP only + Direct VPC Egress `$0`; note: Cloud SQL has no native scale-to-zero and typically costs `~$10–$15+/month` minimum, which is why **Light** is prioritized first)
+- **Design Docs:** [gcp/standard-architecture.drawio](./docs/architecture/gcp/standard-architecture.drawio) | [Architecture Diagrams](./docs/architecture/README.md)
 - **Multi-cloud & Init Switcher:** Future `web-app/infra/aws` (AWS CDK), `web-app/infra/azure` (Bicep), and `bun run init` switcher between `light` and `standard`
 
 ---
