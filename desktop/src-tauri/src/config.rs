@@ -2,7 +2,7 @@ use url::Url;
 
 pub const DEFAULT_DEV_URL: &str = "http://localhost:5173";
 pub const APP_URL_ENV: &str = "LEAN_CLOUD_APP_URL";
-pub const DEEP_LINK_SCHEME: &str = "leancloudapp";
+pub const DEEP_LINK_SCHEME: &str = "agentreadyapp";
 
 const GOOGLE_OAUTH_HOSTS: &[&str] = &["accounts.google.com", "oauth2.googleapis.com"];
 
@@ -83,10 +83,10 @@ mod tests {
         let dev = parse_allowed_app_url("  http://localhost:5173  ").expect("dev URL should parse");
         assert_eq!(dev.as_str(), "http://localhost:5173/");
 
-        let prod = parse_allowed_app_url("https://lean-cloud-app-abc.a.run.app")
+        let prod = parse_allowed_app_url("https://agent-ready-app-abc.a.run.app")
             .expect("Cloud Run URL should parse");
         assert_eq!(prod.scheme(), "https");
-        assert_eq!(prod.host_str(), Some("lean-cloud-app-abc.a.run.app"));
+        assert_eq!(prod.host_str(), Some("agent-ready-app-abc.a.run.app"));
     }
 
     #[test]
@@ -114,7 +114,7 @@ mod tests {
 
     #[test]
     fn validates_external_oauth_launch_urls() {
-        let better_auth = Url::parse("https://lean-cloud-app.a.run.app/api/auth/sign-in/social")
+        let better_auth = Url::parse("https://agent-ready-app.a.run.app/api/auth/sign-in/social")
             .expect("Better Auth URL should parse");
         let arbitrary = Url::parse("https://example.com/evil").unwrap();
 

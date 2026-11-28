@@ -3,7 +3,7 @@
     <mxCell id="0"/>
     <mxCell id="1" parent="0"/>
 
-    <mxCell id="title_banner" value="&lt;b style=&quot;font-size:16px;&quot;&gt;lean-cloud-app-template — Standard Architecture (Google Cloud)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#475569;&quot;&gt;Target: ~$12–$20/month | Cloud Run v2 (min = 0) + Direct VPC Egress ($0) | Region: asia-northeast1 | SvelteKit BFF + Rust Connect RPC API + Cloud SQL PostgreSQL (Private IP + Tenant RLS)&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8fafc;strokeColor=#cbd5e1;align=left;spacingLeft=16;verticalAlign=middle;fontColor=#0f172a;" vertex="1" parent="1">
+    <mxCell id="title_banner" value="&lt;b style=&quot;font-size:16px;&quot;&gt;agent-ready-app-template — Standard Architecture (Google Cloud)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#475569;&quot;&gt;Target: ~$12–$20/month | Cloud Run v2 (min = 0) + Direct VPC Egress ($0) | Region: asia-northeast1 | SvelteKit BFF + Rust Connect RPC API + Cloud SQL PostgreSQL (Private IP + Tenant RLS)&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8fafc;strokeColor=#cbd5e1;align=left;spacingLeft=16;verticalAlign=middle;fontColor=#0f172a;" vertex="1" parent="1">
       <mxGeometry x="30" y="15" width="1600" height="58" as="geometry"/>
     </mxCell>
 

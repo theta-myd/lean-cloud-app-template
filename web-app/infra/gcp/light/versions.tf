@@ -12,6 +12,6 @@ terraform {
   # and pass `-backend-config="bucket=<your-tfstate-bucket>"` during `terraform init`.
   #
   # backend "gcs" {
-  #   prefix = "lean-cloud-app/gcp"
+  #   prefix = "agent-ready-app/gcp"
   # }
 }

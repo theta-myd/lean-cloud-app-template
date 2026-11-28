@@ -59,16 +59,16 @@ gcloud sql users create api_user      --instance="${SQL_INSTANCE}" --password='R
 Then populate all seven Secret Manager versions out-of-band (never commit real secrets or store them in `terraform.tfvars`):
 
 ```bash
-printf '%s' 'REPLACE_WITH_32_BYTE_RANDOM_SECRET' | gcloud secrets versions add lean-cloud-app-better-auth-secret --data-file=-
-printf '%s' 'REPLACE_WITH_GOOGLE_CLIENT_ID'      | gcloud secrets versions add lean-cloud-app-google-client-id --data-file=-
-printf '%s' 'REPLACE_WITH_GOOGLE_CLIENT_SECRET'  | gcloud secrets versions add lean-cloud-app-google-client-secret --data-file=-
-printf '%s' 'REPLACE_WITH_INTERNAL_JWT_SECRET'   | gcloud secrets versions add lean-cloud-app-internal-api-jwt-secret --data-file=-
+printf '%s' 'REPLACE_WITH_32_BYTE_RANDOM_SECRET' | gcloud secrets versions add agent-ready-app-better-auth-secret --data-file=-
+printf '%s' 'REPLACE_WITH_GOOGLE_CLIENT_ID'      | gcloud secrets versions add agent-ready-app-google-client-id --data-file=-
+printf '%s' 'REPLACE_WITH_GOOGLE_CLIENT_SECRET'  | gcloud secrets versions add agent-ready-app-google-client-secret --data-file=-
+printf '%s' 'REPLACE_WITH_INTERNAL_JWT_SECRET'   | gcloud secrets versions add agent-ready-app-internal-api-jwt-secret --data-file=-
 
 # Note: node-postgres (pg v8+) requires `uselibpqcompat=true&sslmode=require` so TLS encrypts
 # against Cloud SQL's per-instance CA without failing public-CA verification.
-printf '%s' "postgres://auth_user:REPLACE_WITH_AUTH_PASSWORD@${SQL_PRIVATE_IP}:5432/app?uselibpqcompat=true&sslmode=require" | gcloud secrets versions add lean-cloud-app-auth-database-url --data-file=-
-printf '%s' "postgres://api_user:REPLACE_WITH_API_PASSWORD@${SQL_PRIVATE_IP}:5432/app?sslmode=require"                        | gcloud secrets versions add lean-cloud-app-api-database-url --data-file=-
-printf '%s' "postgres://migrator_user:REPLACE_WITH_MIGRATOR_PASSWORD@${SQL_PRIVATE_IP}:5432/app?sslmode=require"              | gcloud secrets versions add lean-cloud-app-migrator-database-url --data-file=-
+printf '%s' "postgres://auth_user:REPLACE_WITH_AUTH_PASSWORD@${SQL_PRIVATE_IP}:5432/app?uselibpqcompat=true&sslmode=require" | gcloud secrets versions add agent-ready-app-auth-database-url --data-file=-
+printf '%s' "postgres://api_user:REPLACE_WITH_API_PASSWORD@${SQL_PRIVATE_IP}:5432/app?sslmode=require"                        | gcloud secrets versions add agent-ready-app-api-database-url --data-file=-
+printf '%s' "postgres://migrator_user:REPLACE_WITH_MIGRATOR_PASSWORD@${SQL_PRIVATE_IP}:5432/app?sslmode=require"              | gcloud secrets versions add agent-ready-app-migrator-database-url --data-file=-
 ```
 
 ### 3. Enable Secret Manager mounts & app URL on Cloud Run

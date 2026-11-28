@@ -41,7 +41,7 @@ describe('gcp-id-token', () => {
 			.mockResolvedValueOnce(new Response(firstToken, { status: 200 }))
 			.mockResolvedValueOnce(new Response(refreshedToken, { status: 200 }));
 
-		const audience = 'https://lean-cloud-api-xyz.a.run.app';
+		const audience = 'https://agent-ready-api-xyz.a.run.app';
 		const t1 = await getGcpIdToken(audience, {
 			fetchImpl: fetchMock,
 			nowMs: () => currentMs,
@@ -83,14 +83,14 @@ describe('gcp-id-token', () => {
 			.fn<typeof fetch>()
 			.mockResolvedValueOnce(new Response('forbidden', { status: 403 }));
 
-		expect(shouldFetchGcpIdToken('http://internal-api', { K_SERVICE: 'lean-cloud-app' })).toBe(
+		expect(shouldFetchGcpIdToken('http://internal-api', { K_SERVICE: 'agent-ready-app' })).toBe(
 			true
 		);
 
 		await expect(
 			getGcpIdToken('http://internal-api', {
 				fetchImpl: fetchMock,
-				envVars: { K_SERVICE: 'lean-cloud-app' }
+				envVars: { K_SERVICE: 'agent-ready-app' }
 			})
 		).rejects.toThrow('HTTP 403');
 	});

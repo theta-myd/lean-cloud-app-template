@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    lean_cloud_app_desktop_lib::run();
+    agent_ready_app_desktop_lib::run();
 }

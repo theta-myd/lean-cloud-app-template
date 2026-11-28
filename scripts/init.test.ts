@@ -48,7 +48,8 @@ function createTempRepoCopy(): string {
 				!p.includes('/node_modules') &&
 				!p.includes('/.svelte-kit') &&
 				!p.includes('/build') &&
-				!p.includes('/target')
+				!p.includes('/target') &&
+				!p.includes('/.terraform')
 		});
 	}
 

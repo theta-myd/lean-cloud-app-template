@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { createInterface } from 'node:readline/promises';
 import { stdin, stdout } from 'node:process';
@@ -40,7 +40,7 @@ const SUPPORTED_CLOUDS: readonly CloudProvider[] = ['gcp'];
 
 const HELP_TEXT = `Usage: bun run init -- [options]
 
-Initialize this repository from lean-cloud-app-template into a focused Light or Standard project.
+Initialize this repository from agent-ready-app-template into a focused Light or Standard project.
 
 Options:
   --variant <light|standard>  Target architecture variant (prompted interactively if omitted)
@@ -471,17 +471,14 @@ function promoteInfraDirectory(gcpRoot: string, selectedVariant: ArchitectureVar
 	}
 
 	for (const entry of readdirSync(selectedDir)) {
+		if (entry === '.terraform' || entry === '.terraform.lock.hcl') {
+			continue;
+		}
 		const src = join(selectedDir, entry);
 		const dest = join(gcpRoot, entry);
 		const st = statSync(src);
 		if (st.isDirectory()) {
-			// Copy recursively (not expected today, kept safe)
-			mkdirSync(dest, { recursive: true });
-			for (const child of readdirSync(src)) {
-				const childSrc = join(src, child);
-				const childDest = join(dest, child);
-				writeFileSync(childDest, readFileSync(childSrc));
-			}
+			cpSync(src, dest, { recursive: true });
 		} else {
 			let content = readFileSync(src, 'utf8');
 			if (entry === 'README.md') {
@@ -722,7 +719,7 @@ export function buildInitPlan(options: InitOptions): PlannedAction[] {
 				const src = readFileSync(apiCargoPath, 'utf8');
 				writeFileSync(
 					apiCargoPath,
-					src.replace(/^name = "lean-cloud-app-api"/m, `name = "${slug}-api"`),
+					src.replace(/^name = "agent-ready-app-api"/m, `name = "${slug}-api"`),
 					'utf8'
 				);
 			});
@@ -745,10 +742,10 @@ export function buildInitPlan(options: InitOptions): PlannedAction[] {
 				() => {
 					const src = readFileSync(desktopCargoPath, 'utf8');
 					const updated = src
-						.replace(/^name = "lean-cloud-app-desktop"/m, `name = "${slug}-desktop"`)
-						.replace(/^name = "lean_cloud_app_desktop_lib"/m, `name = "${snake}_desktop_lib"`)
+						.replace(/^name = "agent-ready-app-desktop"/m, `name = "${slug}-desktop"`)
+						.replace(/^name = "agent_ready_app_desktop_lib"/m, `name = "${snake}_desktop_lib"`)
 						.replace(
-							/^description = "Tauri v2 desktop wrapper for lean-cloud-app"/m,
+							/^description = "Tauri v2 desktop wrapper for agent-ready-app"/m,
 							`description = "Tauri v2 desktop wrapper for ${slug}"`
 						);
 					writeFileSync(desktopCargoPath, updated, 'utf8');
@@ -786,7 +783,7 @@ export function buildInitPlan(options: InitOptions): PlannedAction[] {
 					const src = readFileSync(tfvarsPath, 'utf8');
 					writeFileSync(
 						tfvarsPath,
-						src.replace(/^service_name\s*=\s*"lean-cloud-app"/m, `service_name = "${slug}"`),
+						src.replace(/^service_name\s*=\s*"agent-ready-app"/m, `service_name = "${slug}"`),
 						'utf8'
 					);
 				}
@@ -799,7 +796,7 @@ export function buildInitPlan(options: InitOptions): PlannedAction[] {
 				const src = readFileSync(varsPath, 'utf8');
 				writeFileSync(
 					varsPath,
-					src.replace(/default\s*=\s*"lean-cloud-app"/, `default     = "${slug}"`),
+					src.replace(/default\s*=\s*"agent-ready-app"/, `default     = "${slug}"`),
 					'utf8'
 				);
 			}
@@ -813,7 +810,7 @@ export function buildInitPlan(options: InitOptions): PlannedAction[] {
 		if (existsSync(deployWorkflowPath)) {
 			addWrite(deployWorkflowRel, `Set fallback GCP_SERVICE_NAME to "${slug}"`, () => {
 				const src = readFileSync(deployWorkflowPath, 'utf8');
-				writeFileSync(deployWorkflowPath, src.replaceAll("'lean-cloud-app'", `'${slug}'`), 'utf8');
+				writeFileSync(deployWorkflowPath, src.replaceAll("'agent-ready-app'", `'${slug}'`), 'utf8');
 			});
 		}
 	}
@@ -850,7 +847,7 @@ async function promptMissingOptions(
 		}
 		const rl = createInterface({ input: stdin, output: stdout });
 		try {
-			console.log('\nlean-cloud-app-template initializer\n');
+			console.log('\nagent-ready-app-template initializer\n');
 			console.log('  1) light    - Single-container Cloud Run + Cloud Firestore (<$10/mo)');
 			console.log('  2) standard - Cloud Run BFF + Rust Connect RPC API + PostgreSQL 18 RLS\n');
 			const answer = (await rl.question('Choose architecture variant [light/standard]: '))
@@ -860,7 +857,7 @@ async function promptMissingOptions(
 
 			if (!nameStr) {
 				const nameAnswer = (
-					await rl.question('App slug (optional, 3-18 lowercase chars, Enter to keep lean-cloud-app): ')
+					await rl.question('App slug (optional, 3-18 lowercase chars, Enter to keep agent-ready-app): ')
 				).trim();
 				if (nameAnswer) {
 					nameStr = nameAnswer;

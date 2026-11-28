@@ -1,4 +1,4 @@
-# Local development services for lean-cloud-app-template
+# Local development services for agent-ready-app-template
 #
 # Light architecture (default — Firestore Emulator only):
 #   docker compose up -d

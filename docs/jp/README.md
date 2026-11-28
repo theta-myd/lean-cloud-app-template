@@ -1,18 +1,22 @@
 > 言語: [English](../../README.md) | **日本語**
 
-# lean-cloud-app-template
+# agent-ready-app-template
 
-**Svelte 5 + SvelteKit 3** と **Tauri** をベースにした、**月額 $10 未満**・**Scale-to-Zero（`min-instance = 0`）** 志向の Cloud Run Web & デスクトップアプリテンプレートです。より堅牢なマルチテナント構成として **Standard 構成（Rust Connect RPC + PostgreSQL 18 RLS）** への拡張にも対応しています。
+**AI コーディングエージェントがそのまま開発を始められる** Web & デスクトップアプリテンプレートです（**Svelte 5 + SvelteKit 3 + Tauri** ベース、**Light** 月額 $10 未満 / **Standard** Rust Connect RPC + PostgreSQL 18 RLS の 2 構成に対応）。毎回のアーキテクチャ設計や試行錯誤によるトークン消費を抑え、ビジネスロジックとカスタマイズに集中できます。
 
 > **ステータス:** **Light 構成**（Cloud Run v2 + Cloud Firestore）および **Standard 構成**（Cloud Run v2 BFF + 内部専用 Rust Connect RPC API + Cloud SQL PostgreSQL 18 + Direct VPC Egress + Private Cloud DNS + RLS）の両方が実装済み・Google Cloud 実機にて E2E 検証済みです。`bun run init` により新規プロジェクトをいずれかの構成に特化できます。変更履歴は [CHANGELOG.md](../../CHANGELOG.md) を参照してください。
 
 ---
 
-## コンセプト & コスト目標
+## コンセプト：なぜこのテンプレートを使うのか
 
-- **目標月額コスト（Light）:** **月額 $10 未満**（小規模運用で **$0〜$5/月**、アイドル時は **$0/月**）
-- **Scale-to-Zero 徹底:** Light 構成では Cloud Run を `min_instance_count = 0` とし、常時課金が発生するサービス（Cloud SQL・Cloud Load Balancing 等）を排除
-- **単一テンプレート＋クリーンな切り出し（`bun run init`）:** `web-app/app/src/lib/server/` を共通コア・`light/`・`standard/` に明確に分離しており、`bun run init` により不要な構成のコード・依存パッケージ・Terraform・CI ワークフローを安全に整理可能
+AI コーディングエージェントにゼロからアプリを作らせると、**アーキテクチャ設計 → プロトタイプ作成 → 認証/セキュリティ修正 → IaC デバッグ** の手戻りループで大量のトークンと時間を消費しがちです。
+
+**agent-ready-app-template** はこのムダをなくすために設計されています：
+
+1. **ボイラープレートを省き、機能開発にトークンを集中:** Google OAuth、Allowlist 認可、セキュリティヘッダー（CSP/HSTS）、PostgreSQL RLS、distroless コンテナ、Terraform IaC、鍵なし WIF CI/CD まで実機検証済みの土台から開発を開始できます。
+2. **AI エージェント前提のガードレール設計:** `AGENTS.md` / `GEMINI.md`、OKF v0.3 準拠の ADR（`docs/adr/`）、バンドル済み Svelte 5 / `shadcn-svelte` スキル（`web-app/app/.agents/skills/`）、3 層分離された BFF（`src/lib/server/`）により、エージェントが設計を崩さず安全に拡張・カスタマイズできます。
+3. **Light / Standard を選んで、そのまま使う＆自由に改造:** まずは `bun run init` で **Light（月額 $10 未満・Scale-to-Zero）** または **Standard（Rust API + PostgreSQL 18 RLS）** を選び、要件に合うならそのまま利用しつつ、必要に応じて自由にカスタマイズできます。
 
 ---
 
@@ -55,10 +59,11 @@ bun run init -- --variant=light --keep-api --yes
 
 ## アーキテクチャ構成
 
-### 1. Light 構成（標準デフォルト）
+### 1. Light 構成（標準デフォルト — 月額 $10 未満・Scale-to-Zero）
 
 ![Light Architecture](../architecture/gcp/light-architecture.drawio.svg)
 
+- **コスト目標:** **月額 $10 未満**（小規模運用で **$0〜$5/月**、アイドル時は **$0/月**）。`min_instance_count = 0` とし、常時課金リソースを排除
 - **Compute (`web-app/app`):** Cloud Run v2 単一コンテナ（`asia-northeast1`、`min_instance_count = 0`、1 vCPU / 512 MiB、`*.run.app`）上で Svelte 5 + SvelteKit 3（`adapter-bun`）＋ **distroless** イメージを稼働
 - **UI:** `shadcn-svelte`（Home: `sidebar-07` / Login: `login-03`）＋ `mode-watcher`（`light` / `dark` / `system`）＋ `web-app/app/.agents/skills/` 配下に `shadcn-svelte` と公式 Svelte スキルを配置済み
 - **認証:** `better-auth`（**Stateless Cookie モード**）＋ **Google OAuth 2.0 のみ**（`openid`, `email`, `profile`、$0）。環境変数ベースの Allowlist 認可と、E2E テスト専用のパスワードログイン切替（本番は `ENABLE_E2E_PASSWORD_AUTH=false` 固定）に対応
@@ -67,7 +72,7 @@ bun run init -- --variant=light --keep-api --yes
 - **Infra & 安全装置 (`web-app/infra/gcp/light`):** Terraform により Cloud Run v2、Firestore、Artifact Registry（Cleanup Policy 付き）、Secret Manager、Workload Identity Federation（OIDC）、Cloud Logging、Cloud Billing Budget アラート（`$5` / `$8` / `$10`）を構築
 - **設計ドキュメント:** [gcp/light-architecture.drawio](../architecture/gcp/light-architecture.drawio) | [構成図 README](./architecture/README.md) | [ADR 一覧 (OKF v0.3 正本)](../adr/index.md) | [ADR-0001 (日本語)](./adr/0001-light-architecture.md)
 
-### 2. Standard 構成
+### 2. Standard 構成（専用バックエンド API + PostgreSQL 18 RLS）
 
 ![Standard Architecture](../architecture/gcp/standard-architecture.drawio.svg)
 
@@ -78,19 +83,20 @@ bun run init -- --variant=light --keep-api --yes
 - **Database:** Cloud SQL for PostgreSQL 18（Private IP 専用 + Direct VPC Egress `$0`。※Cloud SQL は Scale-to-Zero 非対応で最小構成でも約 $10〜$15+/月かかるため、月額 $10 未満を重視する場合は **Light** 構成を推奨）
 - **Infra (`web-app/infra/gcp/standard`):** Terraform によりカスタム VPC + Private Services Access + Private Cloud DNS（`run.app.` → `private.googleapis.com`）、Cloud SQL for PostgreSQL 18（Private IP 専用）、Cloud Run v2（`app`・内部専用 `api`・`migrate` Job、Direct VPC Egress 経由）、最小権限 SA、Secret Manager、WIF（OIDC）、Cloud Billing Budget アラート（`$10` / `$15` / `$20`）を構築
 - **設計ドキュメント:** [gcp/standard-architecture.drawio](../architecture/gcp/standard-architecture.drawio) | [構成図 README](./architecture/README.md) | [ADR-0002 (日本語)](./adr/0002-standard-architecture.md)
-- **マルチクラウド展開:** 将来の `web-app/infra/aws`（AWS CDK、[#54](https://github.com/theta-myd/lean-cloud-app-template/issues/54)）、`web-app/infra/azure`（Azure Bicep、[#55](https://github.com/theta-myd/lean-cloud-app-template/issues/55)）
+- **マルチクラウド展開:** 将来の `web-app/infra/aws`（AWS CDK、[#54](https://github.com/theta-myd/agent-ready-app-template/issues/54)）、`web-app/infra/azure`（Azure Bicep、[#55](https://github.com/theta-myd/agent-ready-app-template/issues/55)）
 
 ---
 
 ## ディレクトリ構成
 
 ```text
-lean-cloud-app-template/
+agent-ready-app-template/
 ├── .github/
 │   ├── ISSUE_TEMPLATE/        # Bug / Feature Issue テンプレート（Issue のみ受付）
 │   ├── workflows/             # CI（Web App / Rust API / Terraform 検証 / Gitleaks）& GCP デプロイ
 │   ├── CONTRIBUTING.md
-│   └── dependabot.yml
+│   ├── dependabot.yml
+│   └── release.yml
 ├── compose/
 │   └── postgres/              # ローカル PostgreSQL 18 初期化スクリプト（auth/app スキーマ & RLS ロール）
 ├── docs/
@@ -109,10 +115,11 @@ lean-cloud-app-template/
 │       ├── gcp/               # Terraform（light/ と standard/ のルートモジュール）
 │       │   ├── light/         # Scale-to-Zero Cloud Run v2 + Firestore（月額 $10 未満）
 │       │   └── standard/      # Cloud Run v2（app/api/migrate）+ VPC + Cloud SQL PG 18
-│       ├── aws/               # 将来の AWS CDK 用プレースホルダ
-│       └── azure/             # 将来の Azure Bicep 用プレースホルダ
+│       ├── aws/               # 将来の AWS CDK 用プレースホルダ（#54）
+│       └── azure/             # 将来の Azure Bicep 用プレースホルダ（#55）
 ├── desktop/                   # Tauri デスクトップラッパー
-├── AGENTS.md                  # AI エージェント共通リポジトリルール
+├── AGENTS.md                  # AI エージェント共通リポジトリルール・リリースポリシー
+├── CHANGELOG.md               # 変更履歴（Keep a Changelog）
 ├── GEMINI.md                  # Antigravity / Gemini 用ルール（AGENTS.md を読込）
 ├── compose.yaml               # ローカル開発用 Firestore Emulator（既定）& PostgreSQL 18（standard プロファイル）
 ├── package.json               # ルートスクリプト（`bun run init`, `bun run test:init`）

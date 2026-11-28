@@ -1,6 +1,6 @@
 project_id   = "your-gcp-project-id"
 region       = "asia-northeast1"
-service_name = "lean-cloud-app"
+service_name = "agent-ready-app"
 
 # VPC & Private Services Access
 subnet_cidr         = "10.10.0.0/24"

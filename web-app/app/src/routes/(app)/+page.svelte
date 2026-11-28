@@ -15,7 +15,7 @@
 </script>
 
 <svelte:head>
-	<title>Overview — Lean Cloud App</title>
+	<title>Overview — Agent Ready App</title>
 </svelte:head>
 
 <div class="grid gap-4 md:grid-cols-3">

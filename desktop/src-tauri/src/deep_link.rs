@@ -2,7 +2,7 @@ use url::Url;
 
 use crate::config::DEEP_LINK_SCHEME;
 
-/// Maps an incoming `leancloudapp://` deep link to a validated destination under `app_origin`.
+/// Maps an incoming `agentreadyapp://` deep link to a validated destination under `app_origin`.
 pub fn resolve_deep_link_navigation(deep_link: &Url, app_origin: &Url) -> Result<Url, String> {
     if !deep_link.scheme().eq_ignore_ascii_case(DEEP_LINK_SCHEME) {
         return Err(format!(
@@ -75,34 +75,34 @@ mod tests {
     use super::*;
 
     fn app_origin() -> Url {
-        Url::parse("https://lean-cloud-app-xyz.a.run.app").unwrap()
+        Url::parse("https://agent-ready-app-xyz.a.run.app").unwrap()
     }
 
     #[test]
     fn maps_auth_callback_deep_link_preserving_query() {
         let link =
-            Url::parse("leancloudapp://auth/callback?code=abc123&state=xyz789#ignored").unwrap();
+            Url::parse("agentreadyapp://auth/callback?code=abc123&state=xyz789#ignored").unwrap();
         let resolved = resolve_deep_link_navigation(&link, &app_origin()).unwrap();
         assert_eq!(
             resolved.as_str(),
-            "https://lean-cloud-app-xyz.a.run.app/api/auth/callback/google?code=abc123&state=xyz789"
+            "https://agent-ready-app-xyz.a.run.app/api/auth/callback/google?code=abc123&state=xyz789"
         );
     }
 
     #[test]
     fn maps_open_route_deep_link_preserving_origin() {
-        let todos = Url::parse("leancloudapp://open/todos?filter=active").unwrap();
+        let todos = Url::parse("agentreadyapp://open/todos?filter=active").unwrap();
         let resolved = resolve_deep_link_navigation(&todos, &app_origin()).unwrap();
         assert_eq!(
             resolved.as_str(),
-            "https://lean-cloud-app-xyz.a.run.app/todos?filter=active"
+            "https://agent-ready-app-xyz.a.run.app/todos?filter=active"
         );
 
-        let root = Url::parse("leancloudapp://open/").unwrap();
+        let root = Url::parse("agentreadyapp://open/").unwrap();
         let resolved_root = resolve_deep_link_navigation(&root, &app_origin()).unwrap();
         assert_eq!(
             resolved_root.as_str(),
-            "https://lean-cloud-app-xyz.a.run.app/"
+            "https://agent-ready-app-xyz.a.run.app/"
         );
     }
 
@@ -115,22 +115,22 @@ mod tests {
         )
         .is_err());
         assert!(resolve_deep_link_navigation(
-            &Url::parse("leancloudapp://unknown/path").unwrap(),
+            &Url::parse("agentreadyapp://unknown/path").unwrap(),
             &origin
         )
         .is_err());
         assert!(resolve_deep_link_navigation(
-            &Url::parse("leancloudapp://open/%2e%2e%2fsecret").unwrap(),
+            &Url::parse("agentreadyapp://open/%2e%2e%2fsecret").unwrap(),
             &origin
         )
         .is_err());
         assert!(resolve_deep_link_navigation(
-            &Url::parse("leancloudapp://open/todos//nested").unwrap(),
+            &Url::parse("agentreadyapp://open/todos//nested").unwrap(),
             &origin
         )
         .is_err());
         assert!(resolve_deep_link_navigation(
-            &Url::parse("leancloudapp://open//evil.example").unwrap(),
+            &Url::parse("agentreadyapp://open//evil.example").unwrap(),
             &origin
         )
         .is_err());

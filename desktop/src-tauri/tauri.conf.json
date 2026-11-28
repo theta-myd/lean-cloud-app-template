@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Lean Cloud App",
+  "productName": "Agent Ready App",
   "version": "0.1.0",
-  "identifier": "com.example.lean-cloud-app",
+  "identifier": "com.example.agent-ready-app",
   "build": {
     "devUrl": "http://localhost:5173",
     "frontendDist": "../public"
@@ -27,7 +27,7 @@
   "plugins": {
     "deep-link": {
       "desktop": {
-        "schemes": ["leancloudapp"]
+        "schemes": ["agentreadyapp"]
       }
     }
   }

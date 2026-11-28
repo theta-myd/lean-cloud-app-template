@@ -7,7 +7,7 @@
 </script>
 
 <svelte:head>
-	<title>Sign in — Lean Cloud App</title>
+	<title>Sign in — Agent Ready App</title>
 </svelte:head>
 
 <div class="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10">
@@ -18,7 +18,7 @@
 			>
 				<GalleryVerticalEndIcon class="size-4" />
 			</div>
-			Lean Cloud App
+			Agent Ready App
 		</a>
 		<LoginForm
 			enableE2ePasswordAuth={data.enableE2ePasswordAuth}

@@ -12,7 +12,7 @@ variable "region" {
 variable "service_name" {
   description = "Base name for Cloud Run services, VPC, Cloud SQL, Artifact Registry, and service accounts (max 18 chars so '-app-runtime' fits within the 30-char SA limit)."
   type        = string
-  default     = "lean-cloud-app"
+  default     = "agent-ready-app"
 
   validation {
     condition     = length(var.service_name) >= 3 && length(var.service_name) <= 18

@@ -1,5 +1,5 @@
 version: v2
-# Connect RPC / Protobuf code generation for lean-cloud-app-template.
+# Connect RPC / Protobuf code generation for agent-ready-app-template.
 #
 # - TypeScript (web-app/app): Generated with protoc-gen-es v2 into
 #   web-app/app/src/lib/gen so @connectrpc/connect v2 and @bufbuild/protobuf v2

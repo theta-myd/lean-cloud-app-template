@@ -23,7 +23,7 @@
 </script>
 
 <svelte:head>
-	<title>Licenses — Lean Cloud App</title>
+	<title>Licenses — Agent Ready App</title>
 </svelte:head>
 
 <div class="flex flex-col gap-4">

@@ -14,7 +14,7 @@
 
 1. **コスト上限:** 通常〜低トラフィック運用で **月額 $10 未満（アイドル時は $0 付近）** に収める。
 2. **Scale-to-Zero 徹底:** 常時稼働インスタンス（Cloud SQL、Cloud Load Balancing 等）を排除し、`min_instance_count = 0` で運用する。
-3. **モノレポ保守性:** 単一コンテナ構成で開始しつつ、将来の **Standard 構成**（Rust API + PostgreSQL + RLS、[Issue #2](https://github.com/theta-myd/lean-cloud-app-template/issues/2)）へ拡張可能なディレクトリ構造を維持する。
+3. **モノレポ保守性:** 単一コンテナ構成で開始しつつ、将来の **Standard 構成**（Rust API + PostgreSQL + RLS、[Issue #2](https://github.com/theta-myd/agent-ready-app-template/issues/2)）へ拡張可能なディレクトリ構造を維持する。
 4. **Public テンプレート安全性:** 実シークレットやサービスアカウント鍵（JSON）をリポジトリ・CI ともに持たない。
 
 ---

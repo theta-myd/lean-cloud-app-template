@@ -12,19 +12,19 @@ use sqlx::postgres::PgPoolOptions;
 use tower::ServiceExt;
 use uuid::Uuid;
 
-use lean_cloud_app_api::auth::{
+use agent_ready_app_api::auth::{
     JwtVerifier, UserClaims, EXPECTED_AUDIENCE, EXPECTED_ISSUER, USER_TOKEN_HEADER,
 };
-use lean_cloud_app_api::connect::{CONTENT_TYPE_JSON, CONTENT_TYPE_PROTO};
-use lean_cloud_app_api::proto::tenant::v1::{
+use agent_ready_app_api::connect::{CONTENT_TYPE_JSON, CONTENT_TYPE_PROTO};
+use agent_ready_app_api::proto::tenant::v1::{
     EnsurePersonalTenantRequest, EnsurePersonalTenantResponse, ListTenantsRequest,
     ListTenantsResponse, TenantRole,
 };
-use lean_cloud_app_api::proto::todo::v1::{
+use agent_ready_app_api::proto::todo::v1::{
     CreateTodoRequest, CreateTodoResponse, DeleteTodoRequest, ListTodosRequest, ListTodosResponse,
     ToggleTodoRequest, ToggleTodoResponse, UpdateTodoRequest, UpdateTodoResponse,
 };
-use lean_cloud_app_api::{build_router, db, AppState};
+use agent_ready_app_api::{build_router, db, AppState};
 
 const TEST_JWT_SECRET: &str = "integration-test-internal-api-jwt-secret-32-bytes-minimum";
 
@@ -206,7 +206,7 @@ async fn postgres_rls_and_connect_rpc_end_to_end() {
     let health_json: Value = serde_json::from_slice(&health_bytes).unwrap();
     assert_eq!(
         health_json,
-        json!({"status": "ok", "service": "lean-cloud-app-api"})
+        json!({"status": "ok", "service": "agent-ready-app-api"})
     );
 
     let (status, err_json) = post_json(

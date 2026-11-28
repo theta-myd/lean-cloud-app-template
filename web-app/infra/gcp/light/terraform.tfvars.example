@@ -1,6 +1,6 @@
 project_id   = "your-gcp-project-id"
 region       = "asia-northeast1"
-service_name = "lean-cloud-app"
+service_name = "agent-ready-app"
 
 # Access control ('allowlist' or 'open')
 auth_access_mode = "allowlist"

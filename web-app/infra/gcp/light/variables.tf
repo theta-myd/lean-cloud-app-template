@@ -12,7 +12,7 @@ variable "region" {
 variable "service_name" {
   description = "Base name for Cloud Run service, Artifact Registry repository, and service accounts."
   type        = string
-  default     = "lean-cloud-app"
+  default     = "agent-ready-app"
 }
 
 variable "container_image" {

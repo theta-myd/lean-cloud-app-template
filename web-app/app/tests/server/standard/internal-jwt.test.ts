@@ -52,8 +52,8 @@ describe('internal-jwt', () => {
 
 		const claims = verifyInternalUserToken(token, TEST_SECRET, { nowSeconds: now });
 		expect(claims).toEqual({
-			iss: 'lean-cloud-app-bff',
-			aud: 'lean-cloud-app-api',
+			iss: 'agent-ready-app-bff',
+			aud: 'agent-ready-app-api',
 			sub: 'user-456',
 			email: 'bob@example.com',
 			iat: now,

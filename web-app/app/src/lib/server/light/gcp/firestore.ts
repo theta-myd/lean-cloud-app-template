@@ -18,7 +18,7 @@ export function getFirestoreStatus(config: ServerConfig = getServerConfig()): Fi
 	if (config.firestoreEmulatorHost) {
 		return {
 			mode: 'emulator',
-			projectId: config.googleCloudProject || 'lean-cloud-app-local',
+			projectId: config.googleCloudProject || 'agent-ready-app-local',
 			emulatorHost: config.firestoreEmulatorHost
 		};
 	}

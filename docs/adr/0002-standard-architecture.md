@@ -22,7 +22,7 @@ x-adr-deciders:
   - "human:theta"
 generated:
   by: "antigravity/gemini-4"
-  at: "2026-11-28T13:30:00+09:00"
+  at: "2026-11-28T21:35:00+09:00"
 stale_after: "2027-05-28T00:00:00Z"
 sources:
   - id: cloud-run-direct-vpc
@@ -62,7 +62,7 @@ sources:
     title: "PostgreSQL Row Security Policies (RLS)"
     author: "team:postgresql-docs"
   - id: roadmap-standard-issue
-    resource: https://github.com/theta-myd/lean-cloud-app-template/issues/2
+    resource: https://github.com/theta-myd/agent-ready-app-template/issues/2
     title: "Roadmap: Add standard architecture variant (Rust API + PostgreSQL)"
     author: "human:theta"
   - id: okf-spec-v03
@@ -77,7 +77,7 @@ sources:
 
 - **Diagram:** [gcp/standard-architecture.drawio.svg](../architecture/gcp/standard-architecture.drawio.svg) (editable source: [gcp/standard-architecture.drawio](../architecture/gcp/standard-architecture.drawio))
 - **Related ADR:** [ADR-0001: Light Architecture Design](./0001-light-architecture.md)
-- **Roadmap & Implementation Tracking:** [Issue #2](https://github.com/theta-myd/lean-cloud-app-template/issues/2) (sub-issues `#30`–`#38`) | [compose.yaml](../../compose.yaml) | [web-app/infra/gcp/](../../web-app/infra/gcp/)
+- **Roadmap & Implementation Tracking:** [Issue #2](https://github.com/theta-myd/agent-ready-app-template/issues/2) (sub-issues `#30`–`#38`) | [compose.yaml](../../compose.yaml) | [web-app/infra/gcp/](../../web-app/infra/gcp/)
 
 ---
 
@@ -278,7 +278,7 @@ Local development supports both Light and Standard architectures from the same r
 
 ## 6. Terraform Layout & Operations (`web-app/infra/gcp/`)
 
-To keep Light and Standard infrastructures cleanly isolated, independently validated in CI, and selectable via the planned `bun run init` switcher ([Issue #2](https://github.com/theta-myd/lean-cloud-app-template/issues/2), Issue `#35`, Issue `#37`), GCP Terraform is organized into two sibling root modules under [web-app/infra/gcp/](../../web-app/infra/gcp/) in alignment with OKF v0.3 operational governance:[^okf-spec-v03]
+To keep Light and Standard infrastructures cleanly isolated, independently validated in CI, and selectable via the planned `bun run init` switcher ([Issue #2](https://github.com/theta-myd/agent-ready-app-template/issues/2), Issue `#35`, Issue `#37`), GCP Terraform is organized into two sibling root modules under [web-app/infra/gcp/](../../web-app/infra/gcp/) in alignment with OKF v0.3 operational governance:[^okf-spec-v03]
 
 - **`web-app/infra/gcp/light/`** — Existing Light architecture stack ([ADR-0001](./0001-light-architecture.md): single Cloud Run v2 service + Cloud Firestore Standard).
 - **`web-app/infra/gcp/standard/`** — Standard architecture stack:
@@ -294,7 +294,7 @@ To keep Light and Standard infrastructures cleanly isolated, independently valid
   - `budget.tf` — Optional Cloud Billing Budget (50% / 75% / 100% thresholds -> `$10` / `$15` / `$20`).
   - `outputs.tf` — `app` URL, `api` internal URL, Cloud SQL Private IP, WIF Provider name, Artifact Registry URL, and `migrate` Job name.
 
-Multi-cloud Standard infrastructure equivalents (`web-app/infra/aws/` with AWS CDK and `web-app/infra/azure/` with Azure Bicep) remain tracked as future roadmap phases under [Issue #2](https://github.com/theta-myd/lean-cloud-app-template/issues/2).[^roadmap-standard-issue]
+Multi-cloud Standard infrastructure equivalents (`web-app/infra/aws/` with AWS CDK and `web-app/infra/azure/` with Azure Bicep) remain tracked as future roadmap phases under [Issue #2](https://github.com/theta-myd/agent-ready-app-template/issues/2).[^roadmap-standard-issue]
 
 [^cloud-run-direct-vpc]: Google Cloud Run Direct VPC Egress Configuration and Pricing
 [^cloud-run-pricing]: Google Cloud Run Pricing & Always Free Tier
