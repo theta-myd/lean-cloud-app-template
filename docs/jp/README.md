@@ -4,7 +4,7 @@
 
 **Svelte 5 + SvelteKit 3** と **Tauri** をベースにした、**月額 $10 未満**・**Scale-to-Zero（`min-instance = 0`）** 志向の Cloud Run Web & デスクトップアプリテンプレートです。より堅牢なマルチテナント構成として **Standard 構成（Rust Connect RPC + PostgreSQL 18 RLS）** への拡張にも対応しています。
 
-> **ステータス:** **Light 構成**（Cloud Run v2 + Cloud Firestore、GCP 実機検証済み）と **Standard 構成**（Cloud Run v2 BFF + 内部専用 Rust Connect RPC API + Cloud SQL PostgreSQL 18 + Direct VPC Egress + RLS、ローカル疎通確認済み）の両方が実装済みであり、`bun run init` により新規プロジェクトをいずれかの構成に特化できます。
+> **ステータス:** **Light 構成**（Cloud Run v2 + Cloud Firestore）および **Standard 構成**（Cloud Run v2 BFF + 内部専用 Rust Connect RPC API + Cloud SQL PostgreSQL 18 + Direct VPC Egress + Private Cloud DNS + RLS）の両方が実装済み・Google Cloud 実機にて E2E 検証済みです。`bun run init` により新規プロジェクトをいずれかの構成に特化できます。変更履歴は [CHANGELOG.md](../../CHANGELOG.md) を参照してください。
 
 ---
 
@@ -71,14 +71,14 @@ bun run init -- --variant=light --keep-api --yes
 
 ![Standard Architecture](../architecture/gcp/standard-architecture.drawio.svg)
 
-専用のバックエンド API や PostgreSQL の Row-Level Security（RLS）が必要な案件向けに [Issue #2](https://github.com/theta-myd/lean-cloud-app-template/issues/2) で整備：
+専用のバックエンド API や PostgreSQL の Row-Level Security（RLS）が必要な案件向けの構成：
 
 - **BFF (`web-app/app`):** Svelte 5 + SvelteKit 3。Better Auth は PostgreSQL の `auth` スキーマで DB セッション管理し、業務 CRUD はすべて `src/lib/server/standard/` 経由で短命 HS256 JWT（`x-app-user-token`）＋ GCP OIDC ID トークンを付与して内部 API へ委譲
 - **Backend API (`web-app/api`):** Rust（`Connect RPC + Axum + sqlx + PostgreSQL 18 RLS`）、内部専用 Cloud Run v2（`INGRESS_TRAFFIC_INTERNAL_ONLY` + Cloud Run IAM）＋ `--migrate-only` の Cloud Run Job
 - **Database:** Cloud SQL for PostgreSQL 18（Private IP 専用 + Direct VPC Egress `$0`。※Cloud SQL は Scale-to-Zero 非対応で最小構成でも約 $10〜$15+/月かかるため、月額 $10 未満を重視する場合は **Light** 構成を推奨）
-- **Infra (`web-app/infra/gcp/standard`):** Terraform によりカスタム VPC + Private Services Access、Cloud SQL for PostgreSQL 18（Private IP 専用）、Cloud Run v2（`app`・内部専用 `api`・`migrate` Job、Direct VPC Egress 経由）、最小権限 SA、Secret Manager、WIF（OIDC）、Cloud Billing Budget アラート（`$10` / `$15` / `$20`）を構築
+- **Infra (`web-app/infra/gcp/standard`):** Terraform によりカスタム VPC + Private Services Access + Private Cloud DNS（`run.app.` → `private.googleapis.com`）、Cloud SQL for PostgreSQL 18（Private IP 専用）、Cloud Run v2（`app`・内部専用 `api`・`migrate` Job、Direct VPC Egress 経由）、最小権限 SA、Secret Manager、WIF（OIDC）、Cloud Billing Budget アラート（`$10` / `$15` / `$20`）を構築
 - **設計ドキュメント:** [gcp/standard-architecture.drawio](../architecture/gcp/standard-architecture.drawio) | [構成図 README](./architecture/README.md) | [ADR-0002 (日本語)](./adr/0002-standard-architecture.md)
-- **マルチクラウド展開:** 将来の `web-app/infra/aws`（AWS CDK）、`web-app/infra/azure`（Bicep）
+- **マルチクラウド展開:** 将来の `web-app/infra/aws`（AWS CDK、[#54](https://github.com/theta-myd/lean-cloud-app-template/issues/54)）、`web-app/infra/azure`（Azure Bicep、[#55](https://github.com/theta-myd/lean-cloud-app-template/issues/55)）
 
 ---
 

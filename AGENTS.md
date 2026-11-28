@@ -11,7 +11,8 @@ This file defines shared rules for all AI coding agents and contributors working
   - **Cloud Firestore (Standard Edition, Native Mode)** accessed server-side only via Cloud Run runtime service account.
   - **Tauri** desktop wrapper (`desktop/`) delegating Google OAuth to the OS browser + Deep Link callback.
 - **No always-on fixed-cost resources:** Do NOT introduce Cloud SQL, Cloud Load Balancing, or non-zero `min_instance_count` into the Light architecture.
-- **Standard architecture roadmap:** Multi-service variant (`web-app/api/` Rust Connect RPC + Axum + sqlx + RLS + PostgreSQL, AWS CDK, Azure Bicep, `bun run init` switcher) is tracked in [GitHub Issue #2](https://github.com/theta-myd/lean-cloud-app-template/issues/2).
+- **Standard architecture (GCP):** Multi-service variant (`web-app/api/` Rust Connect RPC + Axum + `sqlx` + PostgreSQL 18 RLS, Private-IP Cloud SQL + Direct VPC Egress + Private Cloud DNS, `web-app/infra/gcp/standard/`, `bun run init` switcher) is implemented and live-verified.
+- **Multi-cloud roadmap:** AWS CDK support is tracked in [#54](https://github.com/theta-myd/lean-cloud-app-template/issues/54), and Azure Bicep support is tracked in [#55](https://github.com/theta-myd/lean-cloud-app-template/issues/55).
 
 ---
 
@@ -24,7 +25,7 @@ This file defines shared rules for all AI coding agents and contributors working
   - `README.md` <-> `docs/jp/README.md`
   - `docs/adr/NNNN-*.md` <-> `docs/jp/adr/NNNN-*.md`
   - `docs/architecture/README.md` <-> `docs/jp/architecture/README.md`
-- **English-only files (not mirrored):** `AGENTS.md`, `GEMINI.md`, `.github/*`, `docs/adr/index.md`, `docs/adr/log.md`, `docs/adr/README.md`, and component subdirectory READMEs (`web-app/*/README.md`, `desktop/README.md`).
+- **English-only files (not mirrored):** `AGENTS.md`, `GEMINI.md`, `CHANGELOG.md`, `.github/*`, `docs/adr/index.md`, `docs/adr/log.md`, `docs/adr/README.md`, and component subdirectory READMEs (`web-app/*/README.md`, `desktop/README.md`).
 - **Sync rule:** Whenever a mirrored English document is created or edited, update its corresponding `docs/jp/` file in the **same commit** and keep top language-switcher links valid.
 
 ---
@@ -71,3 +72,26 @@ This file defines shared rules for all AI coding agents and contributors working
 - **Workspace Git worktree:** Create the task branch (`<type>/issue-<N>-<slug>`) under the gitignored root `.worktrees/issue-<N>` directory (outside `.agents/` so bundled skills are not double-discovered, while keeping worktree files inside the Antigravity Project workspace boundary). Multiple Issues whose Owned Paths do not overlap may run in parallel.
 - **Draft PR while working:** Always open in-progress Pull Requests as **Draft** (`gh pr create --draft`) to prevent accidental merges before work and CI checks are complete. Include `Closes #<N>` (and `Generated with Gemini (Antigravity)` per `GEMINI.md` when co-developed).
 - **Ready, Merge, and Cleanup:** Once implementation is finished and all CI checks pass, mark the PR ready (`gh pr ready`). After review, squash-merge into `main`, delete the branch, remove the worktree (`git worktree remove`), and clear `in-progress` if still attached.
+
+---
+
+## 7. Release Policy
+
+- **Versioning (SemVer `vMAJOR.MINOR.PATCH`):**
+  - During `v0.x.y`, bump **MINOR** for new cloud providers, major architecture additions, or breaking template changes (e.g., `v0.1.0` GCP Light & Standard -> `v0.2.0` AWS -> `v0.3.0` Azure), and bump **PATCH** for bug fixes, security/dependency updates, and documentation improvements.
+  - Promote to `v1.0.0` once the core template and target cloud variants are stable.
+- **Lockstep Manifest Versions:** Before tagging `vX.Y.Z`, align `version` to `X.Y.Z` across all six repository manifests:
+  - `package.json`
+  - `web-app/app/package.json`
+  - `web-app/api/Cargo.toml`
+  - `desktop/package.json`
+  - `desktop/src-tauri/Cargo.toml`
+  - `desktop/src-tauri/tauri.conf.json`
+- **Changelog & Release Notes:**
+  - Maintain `CHANGELOG.md` in [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format (English-only).
+  - Keep `.github/release.yml` configured so GitHub Release Notes categorize PRs cleanly.
+- **Release Procedure:**
+  1. Open a dedicated release-preparation Issue & Draft PR to synchronize manifest versions and update `CHANGELOG.md`.
+  2. Verify all required CI checks (`Web App CI`, `Rust API CI`, `Terraform Validate`, `Secret Scan`) and `bun run test:init` pass on `main` after merging.
+  3. Create and push an **annotated tag** on the merged `main` commit (`git tag -a vX.Y.Z -m "Release vX.Y.Z" && git push origin vX.Y.Z`).
+  4. Publish the GitHub Release (`gh release create vX.Y.Z`) summarizing the `CHANGELOG.md` entry.
