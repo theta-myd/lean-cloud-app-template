@@ -36,9 +36,9 @@ Protobuf definitions live in [`../../proto/`](../../proto/) and are compiled by 
 
 - Rust toolchain (`cargo`, `rustfmt`, `clippy`)
 - `protoc` (Protocol Buffers compiler)
-- Docker (for local PostgreSQL 17 via root `compose.yaml`)
+- Docker (for local PostgreSQL 18 via root `compose.yaml`)
 
-### 1. Start PostgreSQL 17 (Standard profile)
+### 1. Start PostgreSQL 18 (Standard profile)
 
 From the repository root:
 
