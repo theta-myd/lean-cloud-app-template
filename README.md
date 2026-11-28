@@ -4,7 +4,7 @@
 
 A **<$10/month**, **scale-to-zero (`min-instance = 0`)** Cloud Run web & desktop application template built around **Svelte 5 + SvelteKit 3** and **Tauri**.
 
-> **Status:** Light architecture design, OKF v0.3 ADR, GCP Terraform IaC (`web-app/infra/gcp/`), and `web-app/app/` (`Svelte 5 + SvelteKit 3 + shadcn-svelte + mode-watcher + better-auth`) are ready. Next up: CI/CD & E2E ([Issue #4](https://github.com/theta-myd/lean-cloud-app-template/issues/4), [#5](https://github.com/theta-myd/lean-cloud-app-template/issues/5)), Firestore CRUD sample ([#6](https://github.com/theta-myd/lean-cloud-app-template/issues/6)), and `desktop/` Tauri wrapper ([#7](https://github.com/theta-myd/lean-cloud-app-template/issues/7)).
+> **Status:** Light architecture design, OKF v0.3 ADR, GCP Terraform IaC (`web-app/infra/gcp/light/` & `web-app/infra/gcp/standard/`), and `web-app/app/` (`Svelte 5 + SvelteKit 3 + shadcn-svelte + mode-watcher + better-auth`) are ready. Next up: CI/CD & E2E ([Issue #4](https://github.com/theta-myd/lean-cloud-app-template/issues/4), [#5](https://github.com/theta-myd/lean-cloud-app-template/issues/5)), Firestore CRUD sample ([#6](https://github.com/theta-myd/lean-cloud-app-template/issues/6)), and `desktop/` Tauri wrapper ([#7](https://github.com/theta-myd/lean-cloud-app-template/issues/7)).
 
 ---
 
@@ -27,7 +27,7 @@ A **<$10/month**, **scale-to-zero (`min-instance = 0`)** Cloud Run web & desktop
 - **Authentication:** `better-auth` in **Stateless Cookie** mode + **Google OAuth 2.0 only** (`openid`, `email`, `profile`, `$0`), with optional env-based user/domain allowlist and an E2E-only password login toggle (`ENABLE_E2E_PASSWORD_AUTH=false` in production)
 - **Datastore:** **Cloud Firestore (Standard Edition, Native Mode)** within the Always Free daily tier, accessed server-side only via the Cloud Run runtime service account (local dev uses the official Firestore Emulator via `compose.yaml`)
 - **Desktop (`desktop`):** Tauri wrapper around `web-app/app` (delegates Google OAuth to the OS browser and returns via Deep Link)
-- **Infra & Guardrails (`web-app/infra/gcp`):** Terraform for Cloud Run v2, Firestore, Artifact Registry (cleanup policy), Secret Manager, Workload Identity Federation (OIDC), Cloud Logging, and Cloud Billing Budget alerts (`$5` / `$8` / `$10`)
+- **Infra & Guardrails (`web-app/infra/gcp/light`):** Terraform for Cloud Run v2, Firestore, Artifact Registry (cleanup policy), Secret Manager, Workload Identity Federation (OIDC), Cloud Logging, and Cloud Billing Budget alerts (`$5` / `$8` / `$10`)
 - **Design Docs:** [gcp/light-architecture.drawio](./docs/architecture/gcp/light-architecture.drawio) | [Architecture Diagrams](./docs/architecture/README.md) | [ADRs (OKF v0.3)](./docs/adr/index.md) | [ADR-0001](./docs/adr/0001-light-architecture.md)
 
 ### 2. Standard Architecture (Planned Roadmap)
@@ -38,6 +38,7 @@ Tracked in [Issue #2](https://github.com/theta-myd/lean-cloud-app-template/issue
 
 - **Backend API (`web-app/api`):** Rust (`Connect RPC + Axum + sqlx + RLS`) on internal-only Cloud Run v2 (`INGRESS_TRAFFIC_INTERNAL_ONLY` + Cloud Run IAM)
 - **Database:** Cloud SQL for PostgreSQL (Private IP only + Direct VPC Egress `$0`; note: Cloud SQL has no native scale-to-zero and typically costs `~$10–$15+/month` minimum, which is why **Light** is prioritized first)
+- **Infra (`web-app/infra/gcp/standard`):** Terraform for Custom VPC + Private Services Access, Cloud SQL for PostgreSQL (Private IP only), Cloud Run v2 (`app`, internal `api`, and `migrate` Job via Direct VPC Egress), least-privilege SAs, Secret Manager, WIF (OIDC), and Cloud Billing Budget alerts (`$10` / `$15` / `$20`)
 - **Design Docs:** [gcp/standard-architecture.drawio](./docs/architecture/gcp/standard-architecture.drawio) | [Architecture Diagrams](./docs/architecture/README.md)
 - **Multi-cloud & Init Switcher:** Future `web-app/infra/aws` (AWS CDK), `web-app/infra/azure` (Bicep), and `bun run init` switcher between `light` and `standard`
 
@@ -59,7 +60,9 @@ lean-cloud-app-template/
 ├── web-app/
 │   ├── app/                   # Svelte 5 + SvelteKit 3 (adapter-bun) + shadcn-svelte + better-auth
 │   └── infra/
-│       ├── gcp/               # Terraform (primary target)
+│       ├── gcp/               # Terraform (light/ and standard/ root modules)
+│       │   ├── light/         # Scale-to-zero Cloud Run v2 + Firestore (<$10/month)
+│       │   └── standard/      # Cloud Run v2 (app/api/migrate) + VPC + Cloud SQL Private IP
 │       ├── aws/               # Placeholder for future AWS CDK
 │       └── azure/             # Placeholder for future Azure Bicep
 ├── desktop/                   # Tauri desktop wrapper

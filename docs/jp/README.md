@@ -4,7 +4,7 @@
 
 **Svelte 5 + SvelteKit 3** と **Tauri** をベースにした、**月額 $10 未満**・**Scale-to-Zero（`min-instance = 0`）** 志向の Cloud Run Web & デスクトップアプリテンプレートです。
 
-> **ステータス:** Light 構成のアーキテクチャ設計・OKF v0.3 ADR・GCP Terraform IaC（`web-app/infra/gcp/`）・`web-app/app/`（`Svelte 5 + SvelteKit 3 + shadcn-svelte + mode-watcher + better-auth`）まで整備済み。次のステップは CI/CD & E2E（[Issue #4](https://github.com/theta-myd/lean-cloud-app-template/issues/4), [#5](https://github.com/theta-myd/lean-cloud-app-template/issues/5)）、Firestore CRUD サンプル（[#6](https://github.com/theta-myd/lean-cloud-app-template/issues/6)）、`desktop/` Tauri ラッパー（[#7](https://github.com/theta-myd/lean-cloud-app-template/issues/7)）です。
+> **ステータス:** Light 構成のアーキテクチャ設計・OKF v0.3 ADR・GCP Terraform IaC（`web-app/infra/gcp/light/`・`web-app/infra/gcp/standard/`）・`web-app/app/`（`Svelte 5 + SvelteKit 3 + shadcn-svelte + mode-watcher + better-auth`）まで整備済み。次のステップは CI/CD & E2E（[Issue #4](https://github.com/theta-myd/lean-cloud-app-template/issues/4), [#5](https://github.com/theta-myd/lean-cloud-app-template/issues/5)）、Firestore CRUD サンプル（[#6](https://github.com/theta-myd/lean-cloud-app-template/issues/6)）、`desktop/` Tauri ラッパー（[#7](https://github.com/theta-myd/lean-cloud-app-template/issues/7)）です。
 
 ---
 
@@ -27,7 +27,7 @@
 - **認証:** `better-auth`（**Stateless Cookie モード**）＋ **Google OAuth 2.0 のみ**（`openid`, `email`, `profile`、$0）。環境変数ベースの Allowlist 認可と、E2E テスト専用のパスワードログイン切替（本番は `ENABLE_E2E_PASSWORD_AUTH=false` 固定）に対応
 - **データストア:** **Cloud Firestore（Standard Edition, Native Mode）** を永年無料枠内で利用。Cloud Run ランタイム SA 経由のサーバーサイド専用アクセスとし、ローカル開発では `compose.yaml` で公式 Firestore Emulator を使用
 - **Desktop (`desktop`):** `web-app/app` をラップする Tauri アプリ（Google OAuth は OS 標準ブラウザへ委譲し Deep Link で復帰）
-- **Infra & 安全装置 (`web-app/infra/gcp`):** Terraform により Cloud Run v2、Firestore、Artifact Registry（Cleanup Policy 付き）、Secret Manager、Workload Identity Federation（OIDC）、Cloud Logging、Cloud Billing Budget アラート（`$5` / `$8` / `$10`）を構築
+- **Infra & 安全装置 (`web-app/infra/gcp/light`):** Terraform により Cloud Run v2、Firestore、Artifact Registry（Cleanup Policy 付き）、Secret Manager、Workload Identity Federation（OIDC）、Cloud Logging、Cloud Billing Budget アラート（`$5` / `$8` / `$10`）を構築
 - **設計ドキュメント:** [gcp/light-architecture.drawio](../architecture/gcp/light-architecture.drawio) | [構成図 README](./architecture/README.md) | [ADR 一覧 (OKF v0.3 正本)](../adr/index.md) | [ADR-0001 (日本語)](./adr/0001-light-architecture.md)
 
 ### 2. Standard 構成（将来ロードマップ）
@@ -38,6 +38,7 @@
 
 - **Backend API (`web-app/api`):** Rust（`Connect RPC + Axum + sqlx + RLS`）、内部専用 Cloud Run v2（`INGRESS_TRAFFIC_INTERNAL_ONLY` + Cloud Run IAM）
 - **Database:** Cloud SQL for PostgreSQL（Private IP 専用 + Direct VPC Egress `$0`。※Cloud SQL は Scale-to-Zero 非対応で最小構成でも約 $10〜$15+/月かかるため、まず **Light** 構成を優先）
+- **Infra (`web-app/infra/gcp/standard`):** Terraform によりカスタム VPC + Private Services Access、Cloud SQL for PostgreSQL（Private IP 専用）、Cloud Run v2（`app`・内部専用 `api`・`migrate` Job、Direct VPC Egress 経由）、最小権限 SA、Secret Manager、WIF（OIDC）、Cloud Billing Budget アラート（`$10` / `$15` / `$20`）を構築
 - **設計ドキュメント:** [gcp/standard-architecture.drawio](../architecture/gcp/standard-architecture.drawio) | [構成図 README](./architecture/README.md)
 - **マルチクラウド & 切替:** 将来の `web-app/infra/aws`（AWS CDK）、`web-app/infra/azure`（Bicep）、および `bun run init` による `light` / `standard` 切替機構
 
@@ -59,7 +60,9 @@ lean-cloud-app-template/
 ├── web-app/
 │   ├── app/                   # Svelte 5 + SvelteKit 3 (adapter-bun) + shadcn-svelte + better-auth
 │   └── infra/
-│       ├── gcp/               # Terraform（優先ターゲット）
+│       ├── gcp/               # Terraform（light/ と standard/ のルートモジュール）
+│       │   ├── light/         # Scale-to-Zero Cloud Run v2 + Firestore（月額 $10 未満）
+│       │   └── standard/      # Cloud Run v2（app/api/migrate）+ VPC + Cloud SQL Private IP
 │       ├── aws/               # 将来の AWS CDK 用プレースホルダ
 │       └── azure/             # 将来の Azure Bicep 用プレースホルダ
 ├── desktop/                   # Tauri デスクトップラッパー

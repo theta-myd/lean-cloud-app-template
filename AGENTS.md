@@ -48,7 +48,7 @@ This file defines shared rules for all AI coding agents and contributors working
 
 - **JavaScript / TypeScript:** Prefer `bun` and `bunx` (`adapter-bun` for SvelteKit).
 - **Local development (Firestore):** Use `docker compose up -d` with root `compose.yaml` (`gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators`, `FIRESTORE_EMULATOR_HOST=localhost:8080`). On Windows with `wslc` (which has no `compose` subcommand), run `wslc run -d --rm --name firestore-emulator -p 8080:8080 gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators gcloud emulators firestore start --host-port=0.0.0.0:8080`.
-- **Terraform (`web-app/infra/gcp/`):** Keep HCL formatted per `terraform fmt`, pass `terraform validate`, enforce Artifact Registry cleanup policies, and keep the two-step Secret Manager bootstrap (`enable_secret_env_refs = false` -> add versions -> `true`).
+- **Terraform (`web-app/infra/gcp/light/`, `web-app/infra/gcp/standard/`):** Keep HCL formatted per `terraform fmt`, pass `terraform validate`, enforce Artifact Registry cleanup policies, and keep the two-step Secret Manager bootstrap (`enable_secret_env_refs = false` -> add versions -> `true`).
 - **Rust (Tauri / future `web-app/api/`):** Follow `cargo`, `clippy`, and `rustfmt`.
 - **UI Components & Svelte Skills:** Use `shadcn-svelte` blocks (`sidebar-07`, `login-03`), `mode-watcher` for Light/Dark/System themes, and follow the local agent skills placed under `web-app/app/.agents/skills/` (`shadcn-svelte`, `svelte-code-writer`, `svelte-core-bestpractices`).
 - **SvelteKit Routing Policy (Light Architecture):** Prefer SvelteKit `load()` functions and form `actions` (`+page.server.ts` / `+layout.server.ts`) as the default for data loading and mutations. Do NOT add custom `+server.ts` API endpoints except for asynchronous/background jobs, health checks (`/api/health`), webhooks, or external/auth integrations (`/api/auth/*`).
@@ -59,7 +59,7 @@ This file defines shared rules for all AI coding agents and contributors working
 
 - **Zero real secrets in Git:** Never commit `.env*` (except `.env.example`), `*.tfvars` (except `terraform.tfvars.example`), `*.tfstate*`, `*.pem`, `*.key`, or GCP service account JSON files. Use dummy placeholders (`CHANGE_ME`, `your-gcp-project-id`) in `*.example` files.
 - **Keyless CI/CD:** Authenticate GitHub Actions to Google Cloud via **Workload Identity Federation (OIDC)** only.
-- **Production Auth Safety:** Keep `ENABLE_E2E_PASSWORD_AUTH="false"` in production Cloud Run (`web-app/infra/gcp/cloud_run.tf`), and default `AUTH_ACCESS_MODE="allowlist"`.
+- **Production Auth Safety:** Keep `ENABLE_E2E_PASSWORD_AUTH="false"` in production Cloud Run (`web-app/infra/gcp/light/cloud_run.tf`, `web-app/infra/gcp/standard/cloud_run.tf`), and default `AUTH_ACCESS_MODE="allowlist"`.
 - **Public Issues-only workflow:** Keep `.github/workflows/secret-scan.yml` (Gitleaks) and `.github/workflows/terraform-validate.yml` green. External PRs are not accepted (`.github/CONTRIBUTING.md`).
 
 ---

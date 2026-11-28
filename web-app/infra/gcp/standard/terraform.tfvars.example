@@ -1,0 +1,33 @@
+project_id   = "your-gcp-project-id"
+region       = "asia-northeast1"
+service_name = "lean-cloud-app"
+
+# VPC & Private Services Access
+subnet_cidr         = "10.10.0.0/24"
+psa_deletion_policy = "ABANDON" # Set "" to attempt clean peering removal on destroy
+
+# Cloud SQL for PostgreSQL (Private IP only; zero Public IP)
+db_version             = "POSTGRES_17"
+db_tier                = "db-f1-micro"
+db_availability_type   = "ZONAL" # Use "REGIONAL" for HA production
+db_disk_size_gb        = 10
+db_name                = "app"
+db_deletion_protection = false # Set true in production
+
+# Access control ('allowlist' or 'open')
+auth_access_mode = "allowlist"
+allowed_emails   = ""
+allowed_domains  = ""
+
+# Public Cloud Run URL (set to `terraform output -raw app_cloud_run_url` in Step 3)
+app_url = ""
+
+# Optional: GitHub Actions keyless OIDC deployment ('owner/repo')
+github_repository = ""
+
+# Optional: Monthly budget alerts in USD ($10 / $15 / $20 at default 20)
+billing_account_id = ""
+budget_amount_usd  = 20
+
+# Two-step bootstrap: keep false on initial apply, add secret versions, then set true
+enable_secret_env_refs = false
