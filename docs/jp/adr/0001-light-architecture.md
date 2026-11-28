@@ -3,7 +3,7 @@
 # ADR-0001: Light 構成アーキテクチャ設計（GCP / <$10/month / Scale-to-Zero）
 
 - **ADR ID:** `ADR-0001` / **ステータス:** Accepted（OKF `stable`） / **決定日:** 2026-11-27
-- **関連図:** [light-architecture.drawio.svg](../../architecture/light-architecture.drawio.svg)（編集可能ソース: [light-architecture.drawio](../../architecture/light-architecture.drawio)）
+- **関連図:** [gcp/light-architecture.drawio.svg](../../architecture/gcp/light-architecture.drawio.svg)（編集可能ソース: [gcp/light-architecture.drawio](../../architecture/gcp/light-architecture.drawio)）
 - **実装先:** [web-app/infra/gcp/](../../../web-app/infra/gcp/) / [compose.yaml](../../../compose.yaml) / [web-app/app/.env.example](../../../web-app/app/.env.example)
 
 ---

@@ -20,7 +20,7 @@
 
 ### 1. Light 構成（現在の注力対象）
 
-![Light Architecture](../architecture/light-architecture.drawio.svg)
+![Light Architecture](../architecture/gcp/light-architecture.drawio.svg)
 
 - **Compute (`web-app/app`):** Cloud Run v2 単一コンテナ（`asia-northeast1`、`min_instance_count = 0`、1 vCPU / 512 MiB、`*.run.app`）上で Svelte 5 + SvelteKit 3（`adapter-bun`）＋ **distroless** イメージを稼働
 - **UI:** `shadcn-svelte`（Home: `sidebar-07` / Login: `login-03`）＋ `mode-watcher`（`light` / `dark` / `system`）＋ `web-app/app/.agents/skills/` 配下に `shadcn-svelte` と公式 Svelte スキルを配置済み
@@ -28,14 +28,17 @@
 - **データストア:** **Cloud Firestore（Standard Edition, Native Mode）** を永年無料枠内で利用。Cloud Run ランタイム SA 経由のサーバーサイド専用アクセスとし、ローカル開発では `compose.yaml` で公式 Firestore Emulator を使用
 - **Desktop (`desktop`):** `web-app/app` をラップする Tauri アプリ（Google OAuth は OS 標準ブラウザへ委譲し Deep Link で復帰）
 - **Infra & 安全装置 (`web-app/infra/gcp`):** Terraform により Cloud Run v2、Firestore、Artifact Registry（Cleanup Policy 付き）、Secret Manager、Workload Identity Federation（OIDC）、Cloud Logging、Cloud Billing Budget アラート（`$5` / `$8` / `$10`）を構築
-- **設計ドキュメント:** [light-architecture.drawio](../architecture/light-architecture.drawio) | [構成図 README](./architecture/README.md) | [ADR 一覧 (OKF v0.3 正本)](../adr/index.md) | [ADR-0001 (日本語)](./adr/0001-light-architecture.md)
+- **設計ドキュメント:** [gcp/light-architecture.drawio](../architecture/gcp/light-architecture.drawio) | [構成図 README](./architecture/README.md) | [ADR 一覧 (OKF v0.3 正本)](../adr/index.md) | [ADR-0001 (日本語)](./adr/0001-light-architecture.md)
 
 ### 2. Standard 構成（将来ロードマップ）
 
+![Standard Architecture](../architecture/gcp/standard-architecture.drawio.svg)
+
 専用のバックエンド API や PostgreSQL の Row-Level Security（RLS）が必要な案件向けに [Issue #2](https://github.com/theta-myd/lean-cloud-app-template/issues/2) で管理：
 
-- **Backend API (`web-app/api`):** Rust（`Connect RPC + Axum + sqlx + RLS`）
-- **Database:** PostgreSQL（※Cloud SQL は Scale-to-Zero 非対応で最小構成でも約 $10〜$15+/月かかるため、まず **Light** 構成を優先）
+- **Backend API (`web-app/api`):** Rust（`Connect RPC + Axum + sqlx + RLS`）、内部専用 Cloud Run v2（`INGRESS_TRAFFIC_INTERNAL_ONLY` + Cloud Run IAM）
+- **Database:** Cloud SQL for PostgreSQL（Private IP 専用 + Direct VPC Egress `$0`。※Cloud SQL は Scale-to-Zero 非対応で最小構成でも約 $10〜$15+/月かかるため、まず **Light** 構成を優先）
+- **設計ドキュメント:** [gcp/standard-architecture.drawio](../architecture/gcp/standard-architecture.drawio) | [構成図 README](./architecture/README.md)
 - **マルチクラウド & 切替:** 将来の `web-app/infra/aws`（AWS CDK）、`web-app/infra/azure`（Bicep）、および `bun run init` による `light` / `standard` 切替機構
 
 ---
