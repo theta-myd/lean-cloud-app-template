@@ -3,8 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "bin": {
+    "agent-ready-app-template": "./scripts/scaffold.ts"
+  },
   "scripts": {
     "init": "bun scripts/init.ts",
-    "test:init": "bun test scripts/init.test.ts"
+    "scaffold": "bun scripts/scaffold.ts",
+    "test:init": "bun test scripts/init.test.ts",
+    "test:scaffold": "bun test scripts/scaffold.test.ts"
   }
 }

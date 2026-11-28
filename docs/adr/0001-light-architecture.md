@@ -18,7 +18,7 @@ x-adr-deciders:
   - "human:theta"
 generated:
   by: "antigravity/gemini-4"
-  at: "2026-11-28T21:35:00+09:00"
+  at: "2026-11-28T22:45:00+09:00"
 verified:
   - by: "human:theta"
     at: "2026-11-27T13:15:00+09:00"
@@ -33,7 +33,7 @@ sources:
     title: "Cloud Firestore Pricing & Free Quota"
     author: "team:google-cloud-docs"
   - id: roadmap-standard-issue
-    resource: https://github.com/theta-myd/agent-ready-app-template/issues/2
+    resource: https://github.com/theta-mynd/agent-ready-app-template/issues/2
     title: "Roadmap: Add standard architecture variant (Rust API + PostgreSQL)"
     author: "human:theta"
   - id: okf-spec-v03

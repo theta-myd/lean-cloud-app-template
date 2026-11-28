@@ -20,7 +20,35 @@ AI コーディングエージェントにゼロからアプリを作らせる�
 
 ---
 
-## クイックスタート：構成の初期化（`bun run init`）
+## クイックスタート
+
+### 方法 A：既存リポジトリへ配置する（`bunx`・クローン不要）
+
+既存（または空）のリポジトリルートから直接実行することで、`web-app` のみ・`desktop` のみ・両方を既存ファイルを壊さずに配置できます：
+
+```bash
+# 対話モード（配置対象・構成・アプリ名スラッグ・CI/ドキュメント有無を順に入力）
+bunx github:theta-mynd/agent-ready-app-template
+
+# ファイルを変更せずに追加内容と既存ファイルとの衝突を確認（ドライラン）
+bunx github:theta-mynd/agent-ready-app-template --target=web-app --variant=light --name=my-app --dry-run
+
+# カレントリポジトリに web-app（Light 構成）のみ配置
+bunx github:theta-mynd/agent-ready-app-template --target=web-app --variant=light --name=my-app --yes
+
+# Tauri デスクトップラッパー（desktop/）のみ配置
+bunx github:theta-mynd/agent-ready-app-template --target=desktop --name=my-app --yes
+
+# web-app（Standard 構成）＋ desktop を配置し、対応する CI/デプロイワークフローも追加
+bunx github:theta-mynd/agent-ready-app-template --target=both --variant=standard --name=my-saas --with-ci --yes
+```
+
+既存リポジトリ向けの主な挙動：
+- **安全な衝突ハンドリング:** `compose.yaml` などの既存ファイルがある場合はデフォルトで上書きせずスキップし一覧表示します（上書きしたい場合のみ `--force` を指定）。
+- **ルート周辺ファイルはオプトイン:** `.github/workflows/*`・`.gitleaks.toml`（`--with-ci`）や `AGENTS.md` / `GEMINI.md` / `docs/`（`--with-docs`）は明示指定したときだけコピーされます。
+- **タグ / ブランチ固定:** `github:theta-mynd/agent-ready-app-template#vX.Y.Z`（または `#<branch>`）のようにバージョン指定も可能です。
+
+### 方法 B：このテンプレートから新規リポジトリを作成する（`bun run init`）
 
 このテンプレートからリポジトリを作成した後、リポジトリルートで `bun run init` を実行すると **Light** または **Standard** にプロジェクトを特化できます：
 
@@ -83,7 +111,7 @@ bun run init -- --variant=light --keep-api --yes
 - **Database:** Cloud SQL for PostgreSQL 18（Private IP 専用 + Direct VPC Egress `$0`。※Cloud SQL は Scale-to-Zero 非対応で最小構成でも約 $10〜$15+/月かかるため、月額 $10 未満を重視する場合は **Light** 構成を推奨）
 - **Infra (`web-app/infra/gcp/standard`):** Terraform によりカスタム VPC + Private Services Access + Private Cloud DNS（`run.app.` → `private.googleapis.com`）、Cloud SQL for PostgreSQL 18（Private IP 専用）、Cloud Run v2（`app`・内部専用 `api`・`migrate` Job、Direct VPC Egress 経由）、最小権限 SA、Secret Manager、WIF（OIDC）、Cloud Billing Budget アラート（`$10` / `$15` / `$20`）を構築
 - **設計ドキュメント:** [gcp/standard-architecture.drawio](../architecture/gcp/standard-architecture.drawio) | [構成図 README](./architecture/README.md) | [ADR-0002 (日本語)](./adr/0002-standard-architecture.md)
-- **マルチクラウド展開:** 将来の `web-app/infra/aws`（AWS CDK、[#54](https://github.com/theta-myd/agent-ready-app-template/issues/54)）、`web-app/infra/azure`（Azure Bicep、[#55](https://github.com/theta-myd/agent-ready-app-template/issues/55)）
+- **マルチクラウド展開:** 将来の `web-app/infra/aws`（AWS CDK、[#54](https://github.com/theta-mynd/agent-ready-app-template/issues/54)）、`web-app/infra/azure`（Azure Bicep、[#55](https://github.com/theta-mynd/agent-ready-app-template/issues/55)）
 
 ---
 
@@ -106,7 +134,9 @@ agent-ready-app-template/
 ├── proto/                     # Buf v2 Protobuf 定義（TenantService, TodoService）
 ├── scripts/
 │   ├── init.ts                # 構成切替スクリプト（`bun run init`）
-│   └── init.test.ts           # `bun run init` の E2E 検証テスト（`bun run test:init`）
+│   ├── init.test.ts           # `bun run init` の E2E 検証テスト（`bun run test:init`）
+│   ├── scaffold.ts            # 既存リポジトリ向け `bunx` 配置 CLI（web-app / desktop / both）
+│   └── scaffold.test.ts       # `scripts/scaffold.ts` の検証テスト（`bun run test:scaffold`）
 ├── web-app/
 │   ├── api/                   # Rust Connect RPC + Axum + sqlx + PostgreSQL 18 RLS API（Standard）
 │   ├── app/                   # Svelte 5 + SvelteKit 3 (adapter-bun) + shadcn-svelte + better-auth
@@ -122,7 +152,7 @@ agent-ready-app-template/
 ├── CHANGELOG.md               # 変更履歴（Keep a Changelog）
 ├── GEMINI.md                  # Antigravity / Gemini 用ルール（AGENTS.md を読込）
 ├── compose.yaml               # ローカル開発用 Firestore Emulator（既定）& PostgreSQL 18（standard プロファイル）
-├── package.json               # ルートスクリプト（`bun run init`, `bun run test:init`）
+├── package.json               # ルート CLI bin（`bunx`）& スクリプト（`init`, `scaffold`, `test:init`, `test:scaffold`）
 ├── .gitleaks.toml
 ├── .gitignore
 ├── LICENSE                    # MIT License
