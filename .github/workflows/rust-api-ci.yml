@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:17-alpine
+        image: postgres:18-alpine
         env:
           # Local CI dummy credentials only — never use in production.
           POSTGRES_DB: app
