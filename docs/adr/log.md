@@ -1,6 +1,7 @@
 # Directory Update Log
 
 ## 2026-11-28
+* **Creation**: Authored [ADR-0002: Standard Architecture Design](0002-standard-architecture.md) (`draft` / `proposed`) and its synchronized Japanese mirror [docs/jp/adr/0002-standard-architecture.md](../jp/adr/0002-standard-architecture.md) covering the GCP Standard architecture (Cloud Run v2 Direct VPC Egress, internal Rust Connect RPC + Axum + `sqlx` API, Cloud SQL PostgreSQL Private IP, Better Auth DB sessions, 4-layer security & tenant RLS, and `light/` vs `standard/` Terraform layout), and registered them in [index.md](index.md).
 * **Update**: Moved GCP architecture diagrams under `docs/architecture/gcp/`, added the Standard architecture diagram reference in [index.md](index.md), and updated diagram links in [ADR-0001: Light Architecture Design](0001-light-architecture.md) and its Japanese mirror [docs/jp/adr/0001-light-architecture.md](../jp/adr/0001-light-architecture.md).
 
 ## 2026-11-27
