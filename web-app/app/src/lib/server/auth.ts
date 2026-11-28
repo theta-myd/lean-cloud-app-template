@@ -98,6 +98,10 @@ async function createAuth(config: ServerConfig): Promise<AuthInstance> {
 			max: 5,
 			options: '-c search_path=auth'
 		});
+		pool.on('error', (err: Error & { code?: string }) => {
+			const code = typeof err.code === 'string' && err.code ? ` (${err.code})` : '';
+			console.error(`[auth] idle PostgreSQL pool client error${code}: ${err.message}`);
+		});
 		cachedPgPool = pool;
 
 		const options: BetterAuthOptions = {
