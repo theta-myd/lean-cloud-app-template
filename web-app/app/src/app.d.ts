@@ -14,7 +14,7 @@ declare global {
 				expiresAt: Date;
 			} | null;
 			isAuthorized: boolean;
-			authMode: 'stateless' | 'e2e-memory-sqlite';
+			authMode: 'stateless' | 'e2e-memory-sqlite' | 'postgres-db';
 		}
 	}
 }

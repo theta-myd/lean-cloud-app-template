@@ -6,6 +6,7 @@
 	import * as Card from '#lib/components/ui/card/index.js';
 	import { Input } from '#lib/components/ui/input/index.js';
 	import { Spinner } from '#lib/components/ui/spinner/index.js';
+	import Building2Icon from '@lucide/svelte/icons/building-2';
 	import CheckIcon from '@lucide/svelte/icons/check';
 	import CircleAlertIcon from '@lucide/svelte/icons/circle-alert';
 	import PencilIcon from '@lucide/svelte/icons/pencil';
@@ -18,10 +19,15 @@
 
 	let newTitle = $state('');
 	let creating = $state(false);
+	let switchingTenantId = $state<string | null>(null);
 	let editingId = $state<string | null>(null);
 	let editingTitle = $state('');
 	let pendingActions = $state<Record<string, 'toggle' | 'update' | 'delete'>>({});
 
+	const isStandard = $derived(data.architecture === 'standard');
+	const isBackendUnconfigured = $derived(
+		isStandard ? !data.apiConfigured : data.firestore.mode === 'unconfigured'
+	);
 	const isSavingEdit = $derived(editingId !== null && pendingActions[editingId] === 'update');
 
 	function startEditing(id: string, title: string) {
@@ -52,6 +58,23 @@
 			}
 		};
 	};
+
+	function handleSwitchTenant(tenantId: string): SubmitFunction {
+		return ({ cancel }) => {
+			if (switchingTenantId) {
+				cancel();
+				return;
+			}
+			switchingTenantId = tenantId;
+			return async ({ update }) => {
+				try {
+					await update();
+				} finally {
+					switchingTenantId = null;
+				}
+			};
+		};
+	}
 
 	function handleRowAction(
 		id: string,
@@ -124,37 +147,92 @@
 		<Card.Header>
 			<div class="flex flex-wrap items-center justify-between gap-2">
 				<div>
-					<Card.Title>Firestore TODO Sample</Card.Title>
+					<Card.Title>{isStandard ? 'TODO Sample' : 'Firestore TODO Sample'}</Card.Title>
 					<Card.Description>
 						Create, Read, Update, and Delete items via SvelteKit <code>load()</code> and form
 						<code>actions</code>.
 					</Card.Description>
 				</div>
-				<div class="flex items-center gap-2">
-					<Badge variant={data.firestore.mode === 'unconfigured' ? 'outline' : 'secondary'}>
-						{data.firestore.mode}
-					</Badge>
-					{#if data.firestore.emulatorHost}
-						<Badge variant="outline" class="font-mono text-xs">{data.firestore.emulatorHost}</Badge>
+				<div class="flex flex-wrap items-center gap-2">
+					{#if isStandard}
+						<Badge variant={data.apiConfigured ? 'secondary' : 'outline'}>
+							connect-rpc / postgres-rls
+						</Badge>
+						{#if data.activeTenant}
+							<Badge variant="outline" class="font-mono text-xs">
+								<Building2Icon data-icon="inline-start" />
+								{data.activeTenant.name} (@{data.activeTenant.slug})
+							</Badge>
+						{/if}
+					{:else}
+						<Badge variant="outline">firestore</Badge>
+						<Badge variant={data.firestore.mode === 'unconfigured' ? 'outline' : 'secondary'}>
+							{data.firestore.mode}
+						</Badge>
+						{#if data.firestore.emulatorHost}
+							<Badge variant="outline" class="font-mono text-xs">{data.firestore.emulatorHost}</Badge>
+						{/if}
 					{/if}
 				</div>
 			</div>
 		</Card.Header>
 		<Card.Content class="flex flex-col gap-4">
-			{#if data.firestore.mode === 'unconfigured'}
+			{#if isStandard && data.tenants.length > 1}
+				<div class="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-muted/40 p-3">
+					<span class="text-xs font-medium text-muted-foreground">Workspace tenant:</span>
+					<div class="flex flex-wrap items-center gap-1.5">
+						{#each data.tenants as tenant (tenant.id)}
+							{@const isActive = data.activeTenant?.id === tenant.id}
+							<form
+								method="POST"
+								action="?/switchTenant"
+								use:enhance={handleSwitchTenant(tenant.id)}
+							>
+								<input type="hidden" name="tenantId" value={tenant.id} />
+								<Button
+									type="submit"
+									size="sm"
+									variant={isActive ? 'secondary' : 'outline'}
+									disabled={isActive || switchingTenantId !== null}
+								>
+									{#if switchingTenantId === tenant.id}
+										<Spinner data-icon="inline-start" />
+									{:else}
+										<Building2Icon data-icon="inline-start" />
+									{/if}
+									{tenant.name}
+								</Button>
+							</form>
+						{/each}
+					</div>
+				</div>
+			{/if}
+
+			{#if isBackendUnconfigured}
 				<Alert.Root>
 					<CircleAlertIcon />
-					<Alert.Title>Firestore not configured</Alert.Title>
-					<Alert.Description>
-						Set <code>FIRESTORE_EMULATOR_HOST=localhost:8080</code> (with
-						<code>wslc</code>) or <code>GOOGLE_CLOUD_PROJECT</code> in <code>.env</code> to persist
-						TODO items.
-					</Alert.Description>
+					{#if isStandard}
+						<Alert.Title>Connect RPC API not configured</Alert.Title>
+						<Alert.Description>
+							Set <code>API_BASE_URL=http://localhost:8081</code> and
+							<code>INTERNAL_API_JWT_SECRET</code> in <code>.env</code> to persist tenant-scoped
+							TODO items via PostgreSQL RLS.
+						</Alert.Description>
+					{:else}
+						<Alert.Title>Firestore not configured</Alert.Title>
+						<Alert.Description>
+							Set <code>FIRESTORE_EMULATOR_HOST=localhost:8080</code> (with
+							<code>wslc</code>) or <code>GOOGLE_CLOUD_PROJECT</code> in <code>.env</code> to persist
+							TODO items.
+						</Alert.Description>
+					{/if}
 				</Alert.Root>
 			{:else if data.connectionError}
 				<Alert.Root variant="destructive">
 					<CircleAlertIcon />
-					<Alert.Title>Firestore connection issue</Alert.Title>
+					<Alert.Title>
+						{isStandard ? 'Connect RPC API connection issue' : 'Firestore connection issue'}
+					</Alert.Title>
 					<Alert.Description>{data.connectionError}</Alert.Description>
 				</Alert.Root>
 			{/if}
@@ -170,13 +248,15 @@
 			<form method="POST" action="?/create" class="flex gap-2" use:enhance={handleCreate}>
 				<Input
 					name="title"
-					placeholder="Add a task to verify Firestore CRUD..."
+					placeholder={isStandard
+						? 'Add a task to verify Connect RPC + PostgreSQL RLS CRUD...'
+						: 'Add a task to verify Firestore CRUD...'}
 					bind:value={newTitle}
 					maxlength={200}
-					disabled={data.firestore.mode === 'unconfigured' || creating}
+					disabled={isBackendUnconfigured || creating}
 					required
 				/>
-				<Button type="submit" disabled={data.firestore.mode === 'unconfigured' || creating}>
+				<Button type="submit" disabled={isBackendUnconfigured || creating}>
 					{@render stableSubmitLabel(
 						creating,
 						'Add',
@@ -195,14 +275,20 @@
 			<div class="flex items-center justify-between gap-2">
 				<Card.Title class="text-base">Tasks ({data.todos.length})</Card.Title>
 				<span class="font-mono text-xs text-muted-foreground">
-					users/{data.user.id}/todos
+					{#if isStandard}
+						{data.activeTenant ? `tenant/${data.activeTenant.slug}/todos` : 'tenant/unresolved/todos'}
+					{:else}
+						users/{data.user.id}/todos
+					{/if}
 				</span>
 			</div>
 		</Card.Header>
 		<Card.Content>
 			{#if data.todos.length === 0}
 				<p class="py-6 text-center text-sm text-muted-foreground">
-					No tasks stored yet. Create one above to test Firestore persistence.
+					{isStandard
+						? 'No tasks stored yet. Create one above to test Connect RPC + PostgreSQL RLS persistence.'
+						: 'No tasks stored yet. Create one above to test Firestore persistence.'}
 				</p>
 			{:else}
 				<ul class="divide-y divide-border">

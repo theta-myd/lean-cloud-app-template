@@ -1,59 +1,28 @@
 import { fail } from '@sveltejs/kit';
+import { getServerConfig } from '#lib/server/env.js';
+import { getFirestoreStatus } from '#lib/server/firestore.js';
 import {
-	FirestoreUnavailableError,
-	createTodo,
-	deleteTodo,
-	getFirestoreStatus,
-	isValidFirestoreDocId,
-	listTodos,
-	toggleTodo,
-	updateTodoTitle,
-	type TodoItem
-} from '#lib/server/firestore.js';
+	ACTIVE_TENANT_COOKIE,
+	createUserTodo,
+	deleteUserTodo,
+	formatTodosBackendError,
+	isValidTodoId,
+	loadUserTodos,
+	toggleUserTodo,
+	updateUserTodoTitle,
+	verifyUserTenantSwitch
+} from '#lib/server/todos-repo.js';
 import type { Actions, PageServerLoad } from './$types';
 
 const MAX_TITLE_LENGTH = 200;
 
-function formatFirestoreError(err: unknown, mode: 'emulator' | 'cloud' | 'unconfigured'): string {
-	if (err instanceof FirestoreUnavailableError) {
-		return err.message;
-	}
-	const detail = err instanceof Error ? err.message : String(err);
-	if (mode === 'emulator') {
-		return `Could not reach the Firestore Emulator. Start it with "docker compose up -d" or "wslc run -d --rm --name firestore-emulator -p 8080:8080 gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators gcloud emulators firestore start --host-port=0.0.0.0:8080". (${detail})`;
-	}
-	console.error('[firestore] request failed:', err);
-	return 'Firestore request failed. Please try again later.';
-}
-
-export const load: PageServerLoad = async ({ locals }) => {
-	const firestore = getFirestoreStatus();
-	if (firestore.mode === 'unconfigured' || !locals.user) {
-		return {
-			firestore,
-			todos: [] as TodoItem[],
-			connectionError: null as string | null
-		};
-	}
-
-	try {
-		const todos = await listTodos(locals.user.id);
-		return {
-			firestore,
-			todos,
-			connectionError: null as string | null
-		};
-	} catch (err) {
-		return {
-			firestore,
-			todos: [] as TodoItem[],
-			connectionError: formatFirestoreError(err, firestore.mode)
-		};
-	}
+export const load: PageServerLoad = async ({ locals, cookies }) => {
+	const preferredTenantId = cookies?.get(ACTIVE_TENANT_COOKIE) ?? null;
+	return loadUserTodos(locals.user, preferredTenantId);
 };
 
 export const actions: Actions = {
-	create: async ({ request, locals }) => {
+	create: async ({ request, locals, cookies }) => {
 		if (!locals.user) return fail(401, { action: 'create', error: 'Unauthorized.' });
 
 		const data = await request.formData();
@@ -68,41 +37,53 @@ export const actions: Actions = {
 			});
 		}
 
-		const status = getFirestoreStatus();
+		const config = getServerConfig();
+		const preferredTenantId = cookies?.get(ACTIVE_TENANT_COOKIE) ?? null;
+		const firestoreMode =
+			config.architectureVariant === 'standard' ? 'unconfigured' : getFirestoreStatus().mode;
 		try {
-			await createTodo(locals.user.id, title);
+			await createUserTodo(locals.user, title, preferredTenantId, config);
 			return { action: 'create', ok: true };
 		} catch (err) {
-			return fail(503, { action: 'create', error: formatFirestoreError(err, status.mode) });
+			return fail(503, {
+				action: 'create',
+				error: formatTodosBackendError(err, config, firestoreMode)
+			});
 		}
 	},
 
-	toggle: async ({ request, locals }) => {
+	toggle: async ({ request, locals, cookies }) => {
 		if (!locals.user) return fail(401, { action: 'toggle', error: 'Unauthorized.' });
 
 		const data = await request.formData();
 		const id = String(data.get('id') ?? '').trim();
 		const nextCompleted = String(data.get('completed') ?? '') === 'true';
-		if (!isValidFirestoreDocId(id)) {
+		if (!isValidTodoId(id)) {
 			return fail(400, { action: 'toggle', error: 'Invalid task id.' });
 		}
 
-		const status = getFirestoreStatus();
+		const config = getServerConfig();
+		const preferredTenantId = cookies?.get(ACTIVE_TENANT_COOKIE) ?? null;
+		const firestoreMode =
+			config.architectureVariant === 'standard' ? 'unconfigured' : getFirestoreStatus().mode;
 		try {
-			await toggleTodo(locals.user.id, id, nextCompleted);
+			await toggleUserTodo(locals.user, id, nextCompleted, preferredTenantId, config);
 			return { action: 'toggle', ok: true };
 		} catch (err) {
-			return fail(503, { action: 'toggle', error: formatFirestoreError(err, status.mode) });
+			return fail(503, {
+				action: 'toggle',
+				error: formatTodosBackendError(err, config, firestoreMode)
+			});
 		}
 	},
 
-	update: async ({ request, locals }) => {
+	update: async ({ request, locals, cookies }) => {
 		if (!locals.user) return fail(401, { action: 'update', error: 'Unauthorized.' });
 
 		const data = await request.formData();
 		const id = String(data.get('id') ?? '').trim();
 		const title = String(data.get('title') ?? '').trim();
-		if (!isValidFirestoreDocId(id)) {
+		if (!isValidTodoId(id)) {
 			return fail(400, { action: 'update', error: 'Invalid task id.' });
 		}
 		if (!title) {
@@ -115,30 +96,77 @@ export const actions: Actions = {
 			});
 		}
 
-		const status = getFirestoreStatus();
+		const config = getServerConfig();
+		const preferredTenantId = cookies?.get(ACTIVE_TENANT_COOKIE) ?? null;
+		const firestoreMode =
+			config.architectureVariant === 'standard' ? 'unconfigured' : getFirestoreStatus().mode;
 		try {
-			await updateTodoTitle(locals.user.id, id, title);
+			await updateUserTodoTitle(locals.user, id, title, preferredTenantId, config);
 			return { action: 'update', ok: true };
 		} catch (err) {
-			return fail(503, { action: 'update', error: formatFirestoreError(err, status.mode) });
+			return fail(503, {
+				action: 'update',
+				error: formatTodosBackendError(err, config, firestoreMode)
+			});
 		}
 	},
 
-	delete: async ({ request, locals }) => {
+	delete: async ({ request, locals, cookies }) => {
 		if (!locals.user) return fail(401, { action: 'delete', error: 'Unauthorized.' });
 
 		const data = await request.formData();
 		const id = String(data.get('id') ?? '').trim();
-		if (!isValidFirestoreDocId(id)) {
+		if (!isValidTodoId(id)) {
 			return fail(400, { action: 'delete', error: 'Invalid task id.' });
 		}
 
-		const status = getFirestoreStatus();
+		const config = getServerConfig();
+		const preferredTenantId = cookies?.get(ACTIVE_TENANT_COOKIE) ?? null;
+		const firestoreMode =
+			config.architectureVariant === 'standard' ? 'unconfigured' : getFirestoreStatus().mode;
 		try {
-			await deleteTodo(locals.user.id, id);
+			await deleteUserTodo(locals.user, id, preferredTenantId, config);
 			return { action: 'delete', ok: true };
 		} catch (err) {
-			return fail(503, { action: 'delete', error: formatFirestoreError(err, status.mode) });
+			return fail(503, {
+				action: 'delete',
+				error: formatTodosBackendError(err, config, firestoreMode)
+			});
+		}
+	},
+
+	switchTenant: async ({ request, locals, cookies }) => {
+		if (!locals.user) return fail(401, { action: 'switchTenant', error: 'Unauthorized.' });
+
+		const config = getServerConfig();
+		if (config.architectureVariant !== 'standard') {
+			return fail(400, {
+				action: 'switchTenant',
+				error: 'Tenant switching is only available in Standard architecture mode.'
+			});
+		}
+
+		const data = await request.formData();
+		const tenantId = String(data.get('tenantId') ?? '').trim();
+		if (!isValidTodoId(tenantId)) {
+			return fail(400, { action: 'switchTenant', error: 'Invalid tenant id.' });
+		}
+
+		try {
+			const verified = await verifyUserTenantSwitch(locals.user, tenantId, config);
+			cookies.set(ACTIVE_TENANT_COOKIE, verified.id, {
+				path: '/',
+				httpOnly: true,
+				sameSite: 'lax',
+				secure: config.appUrl.startsWith('https://'),
+				maxAge: 60 * 60 * 24 * 30
+			});
+			return { action: 'switchTenant', ok: true, tenantId: verified.id };
+		} catch (err) {
+			return fail(503, {
+				action: 'switchTenant',
+				error: formatTodosBackendError(err, config)
+			});
 		}
 	}
 };

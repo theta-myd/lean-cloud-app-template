@@ -18,6 +18,7 @@ import {
 
 function baseConfig(overrides: Partial<ServerConfig> = {}): ServerConfig {
 	return {
+		architectureVariant: 'light',
 		appUrl: 'http://localhost:5173',
 		betterAuthUrl: 'http://localhost:5173',
 		betterAuthSecret: 'unit-test-only-secret-0000000000',
@@ -33,6 +34,13 @@ function baseConfig(overrides: Partial<ServerConfig> = {}): ServerConfig {
 		e2eTestPassword: '',
 		googleCloudProject: '',
 		firestoreEmulatorHost: '',
+		authDatabaseUrl: '',
+		authDatabaseConfigured: false,
+		apiBaseUrl: '',
+		apiConfigured: false,
+		apiAudience: '',
+		internalApiJwtSecret: 'unit-test-only-internal-jwt-secret-32b',
+		internalApiJwtSecretConfigured: true,
 		...overrides
 	};
 }

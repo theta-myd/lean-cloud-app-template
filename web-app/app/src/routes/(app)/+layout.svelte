@@ -25,7 +25,11 @@
 </script>
 
 <Sidebar.Provider>
-	<AppSidebar user={data.user} />
+	<AppSidebar
+		user={data.user}
+		architectureVariant={data.architectureVariant}
+		activeTenant={data.activeTenant}
+	/>
 	<Sidebar.Inset>
 		<header class="flex h-12 shrink-0 items-center gap-2 transition-[width,height] ease-linear">
 			<div class="flex items-center gap-2 px-4">

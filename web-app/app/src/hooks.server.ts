@@ -33,7 +33,11 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	event.locals.user = sessionResult?.user ?? null;
 	event.locals.session = sessionResult?.session ?? null;
-	event.locals.authMode = config.enableE2ePasswordAuth ? 'e2e-memory-sqlite' : 'stateless';
+	event.locals.authMode = config.enableE2ePasswordAuth
+		? 'e2e-memory-sqlite'
+		: config.architectureVariant === 'standard'
+			? 'postgres-db'
+			: 'stateless';
 	event.locals.isAuthorized = sessionResult?.user
 		? isEmailAllowed(sessionResult.user.email, sessionResult.user.emailVerified, config)
 		: false;

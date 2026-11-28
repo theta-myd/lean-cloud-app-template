@@ -1,14 +1,22 @@
 import { betterAuth, type BetterAuthOptions } from 'better-auth';
 import { getMigrations } from 'better-auth/db/migration';
+import type { Pool } from 'pg';
 import { assertProductionAuthSecret, getServerConfig, type ServerConfig } from './env.js';
 
 type AuthInstance = ReturnType<typeof betterAuth<BetterAuthOptions>>;
 
 let cachedAuthPromise: Promise<AuthInstance> | null = null;
 let cachedModeKey = '';
+let cachedPgPool: Pool | null = null;
 
 async function createAuth(config: ServerConfig): Promise<AuthInstance> {
 	assertProductionAuthSecret(config);
+
+	if (cachedPgPool) {
+		const prevPool = cachedPgPool;
+		cachedPgPool = null;
+		await prevPool.end().catch(() => {});
+	}
 
 	const socialProviders = config.googleOAuthConfigured
 		? {
@@ -77,6 +85,41 @@ async function createAuth(config: ServerConfig): Promise<AuthInstance> {
 		return auth as unknown as AuthInstance;
 	}
 
+	if (config.architectureVariant === 'standard') {
+		if (!config.authDatabaseConfigured) {
+			throw new Error(
+				'AUTH_DATABASE_URL must be configured when ARCHITECTURE_VARIANT=standard.'
+			);
+		}
+
+		const { Pool: PgPool } = await import('pg');
+		const pool = new PgPool({
+			connectionString: config.authDatabaseUrl,
+			max: 5,
+			options: '-c search_path=auth'
+		});
+		cachedPgPool = pool;
+
+		const options: BetterAuthOptions = {
+			baseURL: config.betterAuthUrl,
+			secret: config.betterAuthSecret,
+			trustedOrigins,
+			database: pool,
+			socialProviders,
+			advanced: {
+				useSecureCookies
+			},
+			session: {
+				expiresIn: 60 * 60 * 24 * 7,
+				cookieCache: {
+					enabled: false
+				}
+			}
+		};
+
+		return betterAuth(options);
+	}
+
 	const options: BetterAuthOptions = {
 		baseURL: config.betterAuthUrl,
 		secret: config.betterAuthSecret,
@@ -101,11 +144,13 @@ async function createAuth(config: ServerConfig): Promise<AuthInstance> {
 export async function getAuth(): Promise<AuthInstance> {
 	const config = getServerConfig();
 	const modeKey = [
+		config.architectureVariant,
 		config.betterAuthUrl,
 		config.betterAuthSecretConfigured,
 		config.enableE2ePasswordAuth,
 		config.e2eTestEmail,
-		config.googleOAuthConfigured
+		config.googleOAuthConfigured,
+		config.authDatabaseUrl
 	].join('|');
 
 	if (!cachedAuthPromise || cachedModeKey !== modeKey) {
