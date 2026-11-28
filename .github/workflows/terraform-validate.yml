@@ -17,11 +17,15 @@ permissions:
 
 jobs:
   validate:
-    name: Format & Validate (GCP)
+    name: Format & Validate (GCP / ${{ matrix.variant }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [light, standard]
     defaults:
       run:
-        working-directory: web-app/infra/gcp
+        working-directory: web-app/infra/gcp/${{ matrix.variant }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
