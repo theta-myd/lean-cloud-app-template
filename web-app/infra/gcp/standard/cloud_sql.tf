@@ -32,7 +32,8 @@ resource "google_sql_database_instance" "postgres" {
 }
 
 resource "google_sql_database" "app" {
-  project  = var.project_id
-  name     = var.db_name
-  instance = google_sql_database_instance.postgres.name
+  project         = var.project_id
+  name            = var.db_name
+  instance        = google_sql_database_instance.postgres.name
+  deletion_policy = "ABANDON"
 }

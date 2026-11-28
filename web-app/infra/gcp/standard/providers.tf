@@ -5,4 +5,6 @@ provider "google" {
 
 data "google_project" "current" {
   project_id = var.project_id
+
+  depends_on = [google_project_service.enabled]
 }
