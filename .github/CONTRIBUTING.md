@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for your interest in **lean-cloud-app-template**!
+Thank you for your interest in **agent-ready-app-template**!
 
 This repository is maintained as a **public GitHub template repository** and currently accepts **Issues only** (bug reports and feature/architecture proposals via the provided Issue templates).
 

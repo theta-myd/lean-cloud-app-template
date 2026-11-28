@@ -130,7 +130,7 @@
 						<a href="/" {...props}>
 							<GalleryVerticalEndIcon class="size-5!" />
 							<span class="truncate text-base font-semibold">
-								{activeTenant ? activeTenant.name : 'Lean Cloud App'}
+								{activeTenant ? activeTenant.name : 'Agent Ready App'}
 							</span>
 						</a>
 					{/snippet}

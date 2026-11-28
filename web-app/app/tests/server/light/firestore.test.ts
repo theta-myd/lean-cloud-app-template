@@ -57,7 +57,7 @@ describe('Light GCP Firestore adapter', () => {
 		);
 		expect(getFirestoreStatus()).toEqual({
 			mode: 'emulator',
-			projectId: 'lean-cloud-app-local',
+			projectId: 'agent-ready-app-local',
 			emulatorHost: 'localhost:8080'
 		});
 	});

@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
-export const INTERNAL_JWT_ISSUER = 'lean-cloud-app-bff' as const;
-export const INTERNAL_JWT_AUDIENCE = 'lean-cloud-app-api' as const;
+export const INTERNAL_JWT_ISSUER = 'agent-ready-app-bff' as const;
+export const INTERNAL_JWT_AUDIENCE = 'agent-ready-app-api' as const;
 export const DEFAULT_INTERNAL_JWT_TTL_SECONDS = 60;
 
 export interface InternalUserTokenClaims {

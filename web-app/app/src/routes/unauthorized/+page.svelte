@@ -15,7 +15,7 @@
 </script>
 
 <svelte:head>
-	<title>Access Denied — Lean Cloud App</title>
+	<title>Access Denied — Agent Ready App</title>
 </svelte:head>
 
 <div class="flex min-h-svh items-center justify-center bg-muted p-6">

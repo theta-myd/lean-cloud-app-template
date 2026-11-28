@@ -8,9 +8,9 @@ use sqlx::postgres::PgPoolOptions;
 use tokio::net::TcpListener;
 use tracing_subscriber::EnvFilter;
 
-use lean_cloud_app_api::auth::JwtVerifier;
-use lean_cloud_app_api::config::AppConfig;
-use lean_cloud_app_api::{build_router, db, AppState, SERVICE_NAME};
+use agent_ready_app_api::auth::JwtVerifier;
+use agent_ready_app_api::config::AppConfig;
+use agent_ready_app_api::{build_router, db, AppState, SERVICE_NAME};
 
 enum CliMode {
     Serve,

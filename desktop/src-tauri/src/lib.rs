@@ -70,7 +70,7 @@ pub fn run() {
 
             let nav_handle = app.handle().clone();
             let main_window = WebviewWindowBuilder::new(app, "main", webview_url)
-                .title("Lean Cloud App")
+                .title("Agent Ready App")
                 .inner_size(1280.0, 820.0)
                 .min_inner_size(900.0, 600.0)
                 .resizable(true)

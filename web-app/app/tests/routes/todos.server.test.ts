@@ -59,7 +59,7 @@ function makeConfig(overrides: Partial<ServerConfig> = {}): ServerConfig {
 		enableE2ePasswordAuth: false,
 		e2eTestEmail: 'e2e@example.com',
 		e2eTestPassword: '',
-		googleCloudProject: 'lean-cloud-app-local',
+		googleCloudProject: 'agent-ready-app-local',
 		firestoreEmulatorHost: 'localhost:8080',
 		authDatabaseUrl: '',
 		authDatabaseConfigured: false,
@@ -111,7 +111,7 @@ describe('todos +page.server.ts', () => {
 			architecture: 'light' as const,
 			firestore: {
 				mode: 'emulator' as const,
-				projectId: 'lean-cloud-app-local',
+				projectId: 'agent-ready-app-local',
 				emulatorHost: 'localhost:8080'
 			},
 			apiConfigured: false,

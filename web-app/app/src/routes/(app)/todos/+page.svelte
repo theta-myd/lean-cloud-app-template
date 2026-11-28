@@ -101,7 +101,7 @@
 </script>
 
 <svelte:head>
-	<title>TODO Sample — Lean Cloud App</title>
+	<title>TODO Sample — Agent Ready App</title>
 </svelte:head>
 
 {#snippet stableSubmitLabel(

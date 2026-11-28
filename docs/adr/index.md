@@ -1,7 +1,7 @@
 ---
 okf_version: "0.3"
-title: "lean-cloud-app-template Architecture Decision Records"
-description: "OKF v0.3 formatted Architecture Decision Records (ADRs) for lean-cloud-app-template covering GCP Light and Standard architectures, auth, datastore, RLS, and IaC decisions."
+title: "agent-ready-app-template Architecture Decision Records"
+description: "OKF v0.3 formatted Architecture Decision Records (ADRs) for agent-ready-app-template covering GCP Light and Standard architectures, auth, datastore, RLS, and IaC decisions."
 license: MIT
 ---
 

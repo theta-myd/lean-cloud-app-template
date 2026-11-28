@@ -1,4 +1,4 @@
-title = "lean-cloud-app-template gitleaks config"
+title = "agent-ready-app-template gitleaks config"
 
 [extend]
 useDefault = true

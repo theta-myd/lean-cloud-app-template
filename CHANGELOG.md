@@ -1,14 +1,20 @@
 # Changelog
 
-All notable changes to **lean-cloud-app-template** will be documented in this file.
+All notable changes to **agent-ready-app-template** (formerly `lean-cloud-app-template`) will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-- AWS Light & Standard support with AWS CDK ([#54](https://github.com/theta-myd/lean-cloud-app-template/issues/54))
-- Azure Light & Standard support with Azure Bicep ([#55](https://github.com/theta-myd/lean-cloud-app-template/issues/55))
+### Changed
+
+- Rebranded repository and default identifiers from `lean-cloud-app-template` (`lean-cloud-app`) to **`agent-ready-app-template`** (`agent-ready-app`) and refreshed the concept to focus on an agent-ready Light/Standard starter that helps AI coding agents avoid repetitive architecture boilerplate.
+
+### Planned
+
+- AWS Light & Standard support with AWS CDK ([#54](https://github.com/theta-myd/agent-ready-app-template/issues/54))
+- Azure Light & Standard support with Azure Bicep ([#55](https://github.com/theta-myd/agent-ready-app-template/issues/55))
 
 ## [0.1.0] - 2026-11-28
 
@@ -35,5 +41,5 @@ First public release establishing both **Light** (`<$10/month`, scale-to-zero) a
   - GitHub Actions workflows for Web App CI (check, unit tests, build, Playwright E2E, Docker), Rust API CI (fmt, clippy, RLS integration tests against PostgreSQL 18), Terraform Validate matrix, Gitleaks secret scanning, and keyless GCP deploys (`deploy-gcp.yml`, `deploy-gcp-standard.yml`).
   - Architecture diagrams (`docs/architecture/gcp/`), OKF v0.3 ADRs (`ADR-0001`, `ADR-0002`), synchronized Japanese documentation (`docs/jp/`), `.github/release.yml`, and repository release policy (`AGENTS.md §7`).
 
-[Unreleased]: https://github.com/theta-myd/lean-cloud-app-template/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/theta-myd/lean-cloud-app-template/releases/tag/v0.1.0
+[Unreleased]: https://github.com/theta-myd/agent-ready-app-template/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/theta-myd/agent-ready-app-template/releases/tag/v0.1.0

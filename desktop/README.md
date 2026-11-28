@@ -6,7 +6,7 @@ Tauri v2 desktop wrapper for [`web-app/app`](../web-app/app/README.md) in the **
 
 - **Local Development:** Loads `http://localhost:5173` (overridable via `LEAN_CLOUD_APP_URL`).
 - **Production / Cloud Run:** Set `LEAN_CLOUD_APP_URL=https://<service>-<hash>.a.run.app` (at compile time or runtime) to wrap the deployed Cloud Run v2 service. If unset in a release build, the bundled [`public/index.html`](./public/index.html) setup page is displayed.
-- **OS Browser Google OAuth + Deep Link:** Google blocks OAuth inside embedded WebViews (`disallowed_useragent`). The Rust shell intercepts navigations to `accounts.google.com` / `oauth2.googleapis.com` via `on_navigation`, opens them in the OS default browser (`tauri-plugin-opener`), enforces single-instance focus (`tauri-plugin-single-instance`), and handles `leancloudapp://` Deep Link callbacks (`tauri-plugin-deep-link`).
+- **OS Browser Google OAuth + Deep Link:** Google blocks OAuth inside embedded WebViews (`disallowed_useragent`). The Rust shell intercepts navigations to `accounts.google.com` / `oauth2.googleapis.com` via `on_navigation`, opens them in the OS default browser (`tauri-plugin-opener`), enforces single-instance focus (`tauri-plugin-single-instance`), and handles `agentreadyapp://` Deep Link callbacks (`tauri-plugin-deep-link`).
 
 ## Prerequisites
 
@@ -43,12 +43,12 @@ Tauri v2 desktop wrapper for [`web-app/app`](../web-app/app/README.md) in the **
 
 ## Deep Link & OAuth Flow
 
-The shell registers the custom URI scheme `leancloudapp://` in [`src-tauri/tauri.conf.json`](./src-tauri/tauri.conf.json):
+The shell registers the custom URI scheme `agentreadyapp://` in [`src-tauri/tauri.conf.json`](./src-tauri/tauri.conf.json):
 
-- **`leancloudapp://auth/callback?...`:** Rewrites onto `<app-origin>/api/auth/callback/google?...` and navigates the main WebView window, focusing and unminimizing the desktop app.
-- **`leancloudapp://open/<path>?<query>`:** Navigates the main WebView window to `<app-origin>/<path>?<query>` (sanitized to stay strictly within `<app-origin>`).
+- **`agentreadyapp://auth/callback?...`:** Rewrites onto `<app-origin>/api/auth/callback/google?...` and navigates the main WebView window, focusing and unminimizing the desktop app.
+- **`agentreadyapp://open/<path>?<query>`:** Navigates the main WebView window to `<app-origin>/<path>?<query>` (sanitized to stay strictly within `<app-origin>`).
 - **WebView OAuth Interception:** Any attempt to navigate directly to `https://accounts.google.com` or `https://oauth2.googleapis.com` inside the WebView is cancelled and handed off to the OS default browser via `tauri-plugin-opener`.
-- **Linux / Windows Dev Registration:** In debug builds on Windows and on Linux, `register_all()` registers the `leancloudapp://` scheme automatically for local testing. On Windows/macOS release installers (`bun run build`), the OS installer handles scheme registration.
+- **Linux / Windows Dev Registration:** In debug builds on Windows and on Linux, `register_all()` registers the `agentreadyapp://` scheme automatically for local testing. On Windows/macOS release installers (`bun run build`), the OS installer handles scheme registration.
 
 ## Verification & Build
 

@@ -38,7 +38,7 @@
 				<Breadcrumb.Root>
 					<Breadcrumb.List>
 						<Breadcrumb.Item class="hidden md:block">
-							<Breadcrumb.Link href="/">Lean Cloud App</Breadcrumb.Link>
+							<Breadcrumb.Link href="/">Agent Ready App</Breadcrumb.Link>
 						</Breadcrumb.Item>
 						<Breadcrumb.Separator class="hidden md:block" />
 						<Breadcrumb.Item>

@@ -9,8 +9,8 @@ use serde::{Deserialize, Serialize};
 use crate::connect::ConnectError;
 
 pub const USER_TOKEN_HEADER: &str = "x-app-user-token";
-pub const EXPECTED_ISSUER: &str = "lean-cloud-app-bff";
-pub const EXPECTED_AUDIENCE: &str = "lean-cloud-app-api";
+pub const EXPECTED_ISSUER: &str = "agent-ready-app-bff";
+pub const EXPECTED_AUDIENCE: &str = "agent-ready-app-api";
 pub const EXP_LEEWAY_SECONDS: u64 = 10;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

@@ -32,9 +32,9 @@ Capture the generated Cloud Run URL (`terraform output -raw cloud_run_url`), reg
 
 ```bash
 # Example using gcloud CLI (never commit these values)
-printf '%s' 'REPLACE_WITH_32_BYTE_RANDOM_SECRET' | gcloud secrets versions add lean-cloud-app-better-auth-secret --data-file=-
-printf '%s' 'REPLACE_WITH_GOOGLE_CLIENT_ID'      | gcloud secrets versions add lean-cloud-app-google-client-id --data-file=-
-printf '%s' 'REPLACE_WITH_GOOGLE_CLIENT_SECRET'  | gcloud secrets versions add lean-cloud-app-google-client-secret --data-file=-
+printf '%s' 'REPLACE_WITH_32_BYTE_RANDOM_SECRET' | gcloud secrets versions add agent-ready-app-better-auth-secret --data-file=-
+printf '%s' 'REPLACE_WITH_GOOGLE_CLIENT_ID'      | gcloud secrets versions add agent-ready-app-google-client-id --data-file=-
+printf '%s' 'REPLACE_WITH_GOOGLE_CLIENT_SECRET'  | gcloud secrets versions add agent-ready-app-google-client-secret --data-file=-
 ```
 
 ### 3. Enable Secret Manager mounts & app URL on Cloud Run
@@ -78,7 +78,7 @@ Add the following **Repository Variables** under **Settings → Secrets and vari
 | `GCP_WORKLOAD_IDENTITY_PROVIDER` | Yes | — | `terraform output -raw workload_identity_provider_name` |
 | `GCP_DEPLOYER_SERVICE_ACCOUNT` | Yes | — | `terraform output -raw deployer_service_account_email` |
 | `GCP_REGION` | No | `asia-northeast1` | Matches `var.region` |
-| `GCP_SERVICE_NAME` | No | `lean-cloud-app` | Matches `var.service_name` |
+| `GCP_SERVICE_NAME` | No | `agent-ready-app` | Matches `var.service_name` |
 | `GCP_AR_REPOSITORY` | No | `GCP_SERVICE_NAME` | Artifact Registry repository ID (`var.service_name`) |
 
 ### 3. Triggers & Guardrails

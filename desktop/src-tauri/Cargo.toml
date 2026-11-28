@@ -1,12 +1,12 @@
 [package]
-name = "lean-cloud-app-desktop"
+name = "agent-ready-app-desktop"
 version = "0.1.0"
-description = "Tauri v2 desktop wrapper for lean-cloud-app"
+description = "Tauri v2 desktop wrapper for agent-ready-app"
 authors = ["theta-myd"]
 edition = "2021"
 
 [lib]
-name = "lean_cloud_app_desktop_lib"
+name = "agent_ready_app_desktop_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

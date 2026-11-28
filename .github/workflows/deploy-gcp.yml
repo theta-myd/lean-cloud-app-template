@@ -28,8 +28,8 @@ jobs:
     env:
       GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
       GCP_REGION: ${{ vars.GCP_REGION || 'asia-northeast1' }}
-      GCP_SERVICE_NAME: ${{ vars.GCP_SERVICE_NAME || 'lean-cloud-app' }}
-      GCP_AR_REPOSITORY: ${{ vars.GCP_AR_REPOSITORY || vars.GCP_SERVICE_NAME || 'lean-cloud-app' }}
+      GCP_SERVICE_NAME: ${{ vars.GCP_SERVICE_NAME || 'agent-ready-app' }}
+      GCP_AR_REPOSITORY: ${{ vars.GCP_AR_REPOSITORY || vars.GCP_SERVICE_NAME || 'agent-ready-app' }}
     steps:
       - name: Validate GCP WIF Variables
         env:

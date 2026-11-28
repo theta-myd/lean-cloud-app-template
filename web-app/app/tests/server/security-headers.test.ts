@@ -30,7 +30,7 @@ describe('applySecurityHeaders', () => {
 		const original = new Response('ok', { status: 200 });
 		const secured = applySecurityHeaders(
 			original,
-			new URL('https://lean-cloud-app.a.run.app/'),
+			new URL('https://agent-ready-app.a.run.app/'),
 			{ isDev: true, isApi: false }
 		);
 
@@ -45,7 +45,7 @@ describe('applySecurityHeaders', () => {
 	it('adds Cache-Control: no-store for API responses unless already specified', () => {
 		const apiRes = applySecurityHeaders(
 			new Response('{"status":"ok"}', { status: 200 }),
-			new URL('https://lean-cloud-app.a.run.app/api/health'),
+			new URL('https://agent-ready-app.a.run.app/api/health'),
 			{ isDev: false, isApi: true }
 		);
 		expect(apiRes.headers.get('cache-control')).toBe('no-store');
@@ -55,7 +55,7 @@ describe('applySecurityHeaders', () => {
 				status: 200,
 				headers: { 'cache-control': 'private, max-age=60' }
 			}),
-			new URL('https://lean-cloud-app.a.run.app/api/custom'),
+			new URL('https://agent-ready-app.a.run.app/api/custom'),
 			{ isDev: false, isApi: true }
 		);
 		expect(customRes.headers.get('cache-control')).toBe('private, max-age=60');

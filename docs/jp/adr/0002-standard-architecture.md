@@ -5,7 +5,7 @@
 - **ADR ID:** `ADR-0002` / **ステータス:** Proposed（OKF `draft`） / **作成日:** 2026-11-28
 - **関連図:** [gcp/standard-architecture.drawio.svg](../../architecture/gcp/standard-architecture.drawio.svg)（編集可能ソース: [gcp/standard-architecture.drawio](../../architecture/gcp/standard-architecture.drawio)）
 - **関連 ADR:** [ADR-0001: Light 構成アーキテクチャ設計](./0001-light-architecture.md)
-- **ロードマップ / 実装先:** [Issue #2](https://github.com/theta-myd/lean-cloud-app-template/issues/2)（サブ Issue `#30`〜`#38`） / [compose.yaml](../../../compose.yaml) / [web-app/infra/gcp/](../../../web-app/infra/gcp/)
+- **ロードマップ / 実装先:** [Issue #2](https://github.com/theta-myd/agent-ready-app-template/issues/2)（サブ Issue `#30`〜`#38`） / [compose.yaml](../../../compose.yaml) / [web-app/infra/gcp/](../../../web-app/infra/gcp/)
 
 ---
 
@@ -16,7 +16,7 @@
 - **リレーショナルデータ設計と ACID トランザクション:** ドキュメント DB ではなく PostgreSQL による厳格なスキーマ・結合・整合性制御。
 - **DB エンジン層でのマルチテナント分離:** アプリ側の `WHERE` 句任せにせず、PostgreSQL の行レベルセキュリティ（`ENABLE` + `FORCE ROW LEVEL SECURITY`）で他テナントへのアクセスを構造的に遮断。
 - **端末単位の即時セッション失効:** Stateless Cookie の制約を解消し、PostgreSQL に永続化した DB セッションによる即時強制ログアウト。
-- **型安全なバックエンド分離:** SvelteKit BFF（`web-app/app/`）の背後に、メモリ安全な Rust API サービス（`web-app/api/`）を配置し、Protobuf スキーマ駆動の **Connect RPC** で通信する（[Issue #2](https://github.com/theta-myd/lean-cloud-app-template/issues/2)）。
+- **型安全なバックエンド分離:** SvelteKit BFF（`web-app/app/`）の背後に、メモリ安全な Rust API サービス（`web-app/api/`）を配置し、Protobuf スキーマ駆動の **Connect RPC** で通信する（[Issue #2](https://github.com/theta-myd/agent-ready-app-template/issues/2)）。
 
 ### Light 構成と Standard 構成の比較
 
@@ -202,7 +202,7 @@ Playwright 等の E2E テストで Google 本番 OAuth を自動化せずに正�
 
 ## 6. Terraform 構成と運用（`web-app/infra/gcp/`）
 
-Light 構成と Standard 構成の IaC を独立管理し、CI での並行検証および将来の `bun run init` 切替（[Issue #2](https://github.com/theta-myd/lean-cloud-app-template/issues/2)、Issue `#35`、Issue `#37`）に対応するため、[web-app/infra/gcp/](../../../web-app/infra/gcp/) 配下を以下の 2 つのルートモジュールへ整理する。
+Light 構成と Standard 構成の IaC を独立管理し、CI での並行検証および将来の `bun run init` 切替（[Issue #2](https://github.com/theta-myd/agent-ready-app-template/issues/2)、Issue `#35`、Issue `#37`）に対応するため、[web-app/infra/gcp/](../../../web-app/infra/gcp/) 配下を以下の 2 つのルートモジュールへ整理する。
 
 - **`web-app/infra/gcp/light/`** — 既存の Light 構成（[ADR-0001](./0001-light-architecture.md): 単一 Cloud Run v2 + Cloud Firestore Standard）。
 - **`web-app/infra/gcp/standard/`** — Standard 構成の Terraform スタック:
@@ -218,4 +218,4 @@ Light 構成と Standard 構成の IaC を独立管理し、CI での並行検�
   - `budget.tf` — 任意の Cloud Billing Budget（50% / 75% / 100% 閾値 → `$10` / `$15` / `$20`）。
   - `outputs.tf` — `app` URL、`api` 内部 URL、Cloud SQL Private IP、WIF Provider 名、Artifact Registry URL、`migrate` Job 名等。
 
-他クラウドの Standard 構成 IaC（`web-app/infra/aws/` AWS CDK および `web-app/infra/azure/` Azure Bicep）は引き続き [Issue #2](https://github.com/theta-myd/lean-cloud-app-template/issues/2) の将来フェーズとして管理する。
+他クラウドの Standard 構成 IaC（`web-app/infra/aws/` AWS CDK および `web-app/infra/azure/` Azure Bicep）は引き続き [Issue #2](https://github.com/theta-myd/agent-ready-app-template/issues/2) の将来フェーズとして管理する。

@@ -17,7 +17,7 @@ use tower_http::trace::TraceLayer;
 
 use crate::auth::JwtVerifier;
 
-pub const SERVICE_NAME: &str = "lean-cloud-app-api";
+pub const SERVICE_NAME: &str = "agent-ready-app-api";
 const MAX_REQUEST_BODY_BYTES: usize = 1024 * 1024;
 
 #[derive(Clone)]
