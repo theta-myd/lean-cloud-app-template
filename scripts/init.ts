@@ -753,6 +753,57 @@ export function buildInitPlan(options: InitOptions): PlannedAction[] {
 			);
 		}
 
+		const desktopMainPath = join(root, 'desktop/src-tauri/src/main.rs');
+		if (existsSync(desktopMainPath)) {
+			addWrite(
+				'desktop/src-tauri/src/main.rs',
+				`Update Tauri entrypoint crate reference to "${snake}_desktop_lib"`,
+				() => {
+					const src = readFileSync(desktopMainPath, 'utf8');
+					writeFileSync(
+						desktopMainPath,
+						src.replaceAll('agent_ready_app_desktop_lib', `${snake}_desktop_lib`),
+						'utf8'
+					);
+				}
+			);
+		}
+
+		const desktopConfigPath = join(root, 'desktop/src-tauri/src/config.rs');
+		if (existsSync(desktopConfigPath)) {
+			addWrite(
+				'desktop/src-tauri/src/config.rs',
+				`Set DEEP_LINK_SCHEME to "${scheme}"`,
+				() => {
+					const src = readFileSync(desktopConfigPath, 'utf8');
+					writeFileSync(
+						desktopConfigPath,
+						src.replace(
+							/pub const DEEP_LINK_SCHEME: &str = "agentreadyapp";/,
+							`pub const DEEP_LINK_SCHEME: &str = "${scheme}";`
+						),
+						'utf8'
+					);
+				}
+			);
+		}
+
+		const desktopDeepLinkPath = join(root, 'desktop/src-tauri/src/deep_link.rs');
+		if (existsSync(desktopDeepLinkPath)) {
+			addWrite(
+				'desktop/src-tauri/src/deep_link.rs',
+				`Update deep-link scheme references to "${scheme}://"`,
+				() => {
+					const src = readFileSync(desktopDeepLinkPath, 'utf8');
+					writeFileSync(
+						desktopDeepLinkPath,
+						src.replaceAll('agentreadyapp://', `${scheme}://`),
+						'utf8'
+					);
+				}
+			);
+		}
+
 		const tauriConfPath = join(root, 'desktop/src-tauri/tauri.conf.json');
 		if (existsSync(tauriConfPath)) {
 			addWrite(

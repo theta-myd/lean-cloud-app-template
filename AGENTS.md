@@ -12,7 +12,7 @@ This file defines shared rules for all AI coding agents and contributors working
   - **Tauri** desktop wrapper (`desktop/`) delegating Google OAuth to the OS browser + Deep Link callback.
 - **No always-on fixed-cost resources:** Do NOT introduce Cloud SQL, Cloud Load Balancing, or non-zero `min_instance_count` into the Light architecture.
 - **Standard architecture (GCP):** Multi-service variant (`web-app/api/` Rust Connect RPC + Axum + `sqlx` + PostgreSQL 18 RLS, Private-IP Cloud SQL + Direct VPC Egress + Private Cloud DNS, `web-app/infra/gcp/standard/`, `bun run init` switcher) is implemented and live-verified.
-- **Multi-cloud roadmap:** AWS CDK support is tracked in [#54](https://github.com/theta-myd/agent-ready-app-template/issues/54), and Azure Bicep support is tracked in [#55](https://github.com/theta-myd/agent-ready-app-template/issues/55).
+- **Multi-cloud roadmap:** AWS CDK support is tracked in [#54](https://github.com/theta-mynd/agent-ready-app-template/issues/54), and Azure Bicep support is tracked in [#55](https://github.com/theta-mynd/agent-ready-app-template/issues/55).
 
 ---
 

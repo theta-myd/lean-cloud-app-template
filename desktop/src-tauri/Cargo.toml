@@ -2,7 +2,7 @@
 name = "agent-ready-app-desktop"
 version = "0.1.0"
 description = "Tauri v2 desktop wrapper for agent-ready-app"
-authors = ["theta-myd"]
+authors = ["theta-mynd"]
 edition = "2021"
 
 [lib]

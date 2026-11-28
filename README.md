@@ -20,7 +20,35 @@ Asking an AI coding agent to build an application from scratch often burns token
 
 ---
 
-## Quick Start: Initialize Your Variant (`bun run init`)
+## Quick Start
+
+### Option A: Add to an Existing Repository (`bunx` — No Clone Required)
+
+Run directly from the root of an existing (or empty) repository to place `web-app`, `desktop`, or `both` without overwriting existing files by default:
+
+```bash
+# Interactive mode (prompts for target, variant, app slug, and optional CI/docs)
+bunx github:theta-mynd/agent-ready-app-template
+
+# Preview additions and file conflicts without modifying anything
+bunx github:theta-mynd/agent-ready-app-template --target=web-app --variant=light --name=my-app --dry-run
+
+# Place web-app only (Light) into the current repository
+bunx github:theta-mynd/agent-ready-app-template --target=web-app --variant=light --name=my-app --yes
+
+# Place the Tauri desktop wrapper only
+bunx github:theta-mynd/agent-ready-app-template --target=desktop --name=my-app --yes
+
+# Place both web-app (Standard) and desktop, plus matching CI/deploy workflows
+bunx github:theta-mynd/agent-ready-app-template --target=both --variant=standard --name=my-saas --with-ci --yes
+```
+
+Key behaviors for existing repositories:
+- **Safe conflict handling:** Existing files (such as `compose.yaml`) are skipped by default and listed in the summary; pass `--force` only if you want to overwrite them.
+- **Opt-in root extras:** `.github/workflows/*` + `.gitleaks.toml` (`--with-ci`) and `AGENTS.md` / `GEMINI.md` / `docs/` (`--with-docs`) are only copied when explicitly requested.
+- **Pin a version or branch:** Append `#vX.Y.Z` (or `#<branch>`) to `github:theta-mynd/agent-ready-app-template`.
+
+### Option B: Create a New Repository from This Template (`bun run init`)
 
 After creating a repository from this template, run `bun run init` from the repository root to lock the project to **Light** or **Standard**:
 
@@ -83,7 +111,7 @@ For workloads requiring a dedicated backend API and relational database with Row
 - **Database:** Cloud SQL for PostgreSQL 18 (Private IP only + Direct VPC Egress `$0`; note: Cloud SQL has no native scale-to-zero and typically costs `~$10–$15+/month` minimum, which is why **Light** is recommended for `<$10/month`)
 - **Infra (`web-app/infra/gcp/standard`):** Terraform for Custom VPC + Private Services Access + Private Cloud DNS (`run.app.` -> `private.googleapis.com`), Cloud SQL for PostgreSQL 18 (Private IP only), Cloud Run v2 (`app`, internal `api`, and `migrate` Job via Direct VPC Egress), least-privilege SAs, Secret Manager, WIF (OIDC), and Cloud Billing Budget alerts (`$10` / `$15` / `$20`)
 - **Design Docs:** [gcp/standard-architecture.drawio](./docs/architecture/gcp/standard-architecture.drawio) | [Architecture Diagrams](./docs/architecture/README.md) | [ADR-0002](./docs/adr/0002-standard-architecture.md)
-- **Multi-cloud roadmap:** Future `web-app/infra/aws` (AWS CDK, [#54](https://github.com/theta-myd/agent-ready-app-template/issues/54)) and `web-app/infra/azure` (Azure Bicep, [#55](https://github.com/theta-myd/agent-ready-app-template/issues/55))
+- **Multi-cloud roadmap:** Future `web-app/infra/aws` (AWS CDK, [#54](https://github.com/theta-mynd/agent-ready-app-template/issues/54)) and `web-app/infra/azure` (Azure Bicep, [#55](https://github.com/theta-mynd/agent-ready-app-template/issues/55))
 
 ---
 
@@ -106,7 +134,9 @@ agent-ready-app-template/
 ├── proto/                     # Buf v2 Protobuf definitions (TenantService, TodoService)
 ├── scripts/
 │   ├── init.ts                # Template initializer (`bun run init`) for Light vs Standard
-│   └── init.test.ts           # End-to-end tests for `bun run init` (`bun run test:init`)
+│   ├── init.test.ts           # End-to-end tests for `bun run init` (`bun run test:init`)
+│   ├── scaffold.ts            # `bunx` scaffold CLI for existing repositories (web-app / desktop / both)
+│   └── scaffold.test.ts       # Tests for `scripts/scaffold.ts` (`bun run test:scaffold`)
 ├── web-app/
 │   ├── api/                   # Rust Connect RPC + Axum + sqlx + PostgreSQL 18 RLS API (Standard)
 │   ├── app/                   # Svelte 5 + SvelteKit 3 (adapter-bun) + shadcn-svelte + better-auth
@@ -122,7 +152,7 @@ agent-ready-app-template/
 ├── CHANGELOG.md               # Release history (Keep a Changelog)
 ├── GEMINI.md                  # Antigravity / Gemini workspace rules (includes AGENTS.md)
 ├── compose.yaml               # Local Firestore Emulator (default) & PostgreSQL 18 (`standard` profile)
-├── package.json               # Root scripts (`bun run init`, `bun run test:init`)
+├── package.json               # Root CLI bin (`bunx`) & scripts (`init`, `scaffold`, `test:init`, `test:scaffold`)
 ├── .gitleaks.toml
 ├── .gitignore
 ├── LICENSE                    # MIT License
